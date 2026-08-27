@@ -1,5 +1,7 @@
 # internal-representation-control
 
+Robyn's quick extension of Julius Kamp's work
+
 Replication of the _Intentional Control of Internal States_ section of Anthropic's _Emergent Introspective Awareness in Large Language Models_ ([Lindsey, 2025](https://transformer-circuits.pub/2025/introspection/index.html#control)) on Gemma 3 27B-it extended by also measuring the internal representation of concepts with Gemma Scope 2 SAEs and Natural Language Autoencoders.
 
 The model is asked to write a fixed sentence while *thinking* / *not thinking* about a concept word, and must reproduce the sentence exactly. On the response tokens we then measure how strongly the concept is represented internally, three ways:

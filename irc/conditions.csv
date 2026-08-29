@@ -1,0 +1,68 @@
+phrasing_id,cell_id,family,direction,frame,negation,template,negates
+A1,focus_imp_none,focus,toward,imperative,none,concentrate on {concept} while you write,
+A2,focus_imp_none,focus,toward,imperative,none,think about {concept} while you write,
+B1,focus_decl_none,focus,toward,declarative,none,{concept} {BE} relevant to this task,
+B2,focus_decl_none,focus,toward,declarative,none,{concept} {BE} related to this task,
+B3,focus_decl_none,focus,toward,declarative,none,{concept} {BE} the point here,
+C1,focus_imp_syn,focus_neg,toward,imperative,syntactic,do not ignore {concept},I5
+C2,focus_imp_syn,focus_neg,toward,imperative,syntactic,do not overlook {concept},
+C3,focus_imp_syn,focus_neg,toward,imperative,syntactic,do not set {concept} aside,I1
+C4,focus_imp_syn,focus_neg,toward,imperative,syntactic,do not skip past {concept},I2
+D1,focus_imp_both,focus_neg,toward,imperative,both,do not disregard {concept},J1
+D2,focus_imp_both,focus_neg,toward,imperative,both,do not discount {concept},J2
+D3,focus_imp_both,focus_neg,toward,imperative,both,do not de-emphasize {concept},J3
+D4,focus_imp_both,focus_neg,toward,imperative,both,do not disattend {concept},J4
+E1,focus_decl_syn,focus_neg,toward,declarative,syntactic,{concept} {BE} not beside the point here,K1
+E2,focus_decl_syn,focus_neg,toward,declarative,syntactic,{concept} {BE} not extraneous here,K2
+E3,focus_decl_syn,focus_neg,toward,declarative,syntactic,{concept} {DO} not belong to a different task,K3
+F1,focus_decl_both,focus_neg,toward,declarative,both,{concept} {BE} not irrelevant to this task,L1
+F2,focus_decl_both,focus_neg,toward,declarative,both,{concept} {BE} not unrelated to what you are writing,L2
+F3,focus_decl_both,focus_neg,toward,declarative,both,{concept} {BE} not immaterial to this task,L3
+G1,mental_imp_syn,mental,away,imperative,syntactic,"whatever you do, do not think about {concept}",
+G2,mental_imp_syn,mental,away,imperative,syntactic,do not think about {concept},
+G3,mental_imp_syn,mental,away,imperative,syntactic,do not consider {concept},
+H1,output_imp_syn,output,away,imperative,syntactic,do not mention {concept},
+H2,output_imp_syn,output,away,imperative,syntactic,do not write {concept},
+I1,away_imp_none,disregard,away,imperative,none,set {concept} aside,
+I2,away_imp_none,disregard,away,imperative,none,skip past {concept},
+I3,away_imp_none,disregard,away,imperative,none,pass over {concept},
+I4,away_imp_none,disregard,away,imperative,none,leave {concept} out,
+I5,away_imp_none,disregard,away,imperative,none,ignore {concept},
+J1,away_imp_morph,disregard,away,imperative,morphological,disregard {concept},
+J2,away_imp_morph,disregard,away,imperative,morphological,discount {concept},
+J3,away_imp_morph,disregard,away,imperative,morphological,de-emphasize {concept},
+J4,away_imp_morph,disregard,away,imperative,morphological,disattend {concept},
+K1,relevance_decl_none,relevance,away,declarative,none,{concept} {BE} beside the point here,
+K2,relevance_decl_none,relevance,away,declarative,none,{concept} {BE} extraneous here,
+K3,relevance_decl_none,relevance,away,declarative,none,{concept} {BELONG} to a different task,
+L1,relevance_decl_morph,relevance,away,declarative,morphological,{concept} {BE} irrelevant to this task,
+L2,relevance_decl_morph,relevance,away,declarative,morphological,{concept} {BE} unrelated to what you are writing,
+L3,relevance_decl_morph,relevance,away,declarative,morphological,{concept} {BE} immaterial to this task,
+M1,relevance_decl_syn,relevance,away,declarative,syntactic,{concept} {BE} not relevant to this task,B1
+M2,relevance_decl_syn,relevance,away,declarative,syntactic,{concept} {DO} not matter here,
+N1,incong_imp_none,incongruent,neutral,imperative,none,juggle {concept},
+N2,incong_imp_none,incongruent,neutral,imperative,none,laminate {concept},
+N3,incong_imp_none,incongruent,neutral,imperative,none,notarize {concept},
+N4,incong_imp_none,incongruent,neutral,imperative,none,braise {concept},
+N5,incong_imp_none,incongruent,neutral,imperative,none,centrifuge {concept},
+P1,incong_imp_syn,incongruent,neutral,imperative,syntactic,do not juggle {concept},N1
+P2,incong_imp_syn,incongruent,neutral,imperative,syntactic,do not laminate {concept},N2
+P3,incong_imp_syn,incongruent,neutral,imperative,syntactic,do not notarize {concept},N3
+P4,incong_imp_syn,incongruent,neutral,imperative,syntactic,do not braise {concept},N4
+P5,incong_imp_syn,incongruent,neutral,imperative,syntactic,do not centrifuge {concept},N5
+Q1,nonce_imp_none,nonce,neutral,imperative,none,glorf {concept},
+Q2,nonce_imp_none,nonce,neutral,imperative,none,flarn {concept},
+Q3,nonce_imp_none,nonce,neutral,imperative,none,vusk {concept},
+R1,nonce_imp_syn,nonce,neutral,imperative,syntactic,do not glorf {concept},Q1
+R2,nonce_imp_syn,nonce,neutral,imperative,syntactic,do not flarn {concept},Q2
+R3,nonce_imp_syn,nonce,neutral,imperative,syntactic,do not vusk {concept},Q3
+S1,nonce_decl_none,nonce,neutral,declarative,none,{concept} {BE} glorfy to this task,
+S2,nonce_decl_none,nonce,neutral,declarative,none,{concept} {BE} flarny to this task,
+S3,nonce_decl_none,nonce,neutral,declarative,none,{concept} {BE} vusky to this task,
+T1,base_bare_none,baseline,neutral,none,none,{concept},
+T2,base_bare_syn,baseline,neutral,none,syntactic,not {concept},T1
+T3,base_filler_none,baseline,neutral,none,none,. . . . . {concept},
+T4,base_filler_adjacent,baseline,neutral,none,syntactic,. . . . not {concept},T3
+T5,base_filler_detached,baseline,neutral,none,syntactic,not . . . . {concept},T3
+T6,floor_control,control,away,declarative,morphological,{other_concept} {BE} irrelevant to this task,
+T7,base_absent,baseline,none,none,none,,

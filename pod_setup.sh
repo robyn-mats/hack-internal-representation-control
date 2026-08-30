@@ -10,6 +10,13 @@
 # does not satisfy pyproject.toml, and `uv sync` would build a .venv with a
 # different multi-GB torch and risk breaking CUDA. Hence pip and --no-deps.
 
+# First executable lines, so they print before anything that can hang or fail.
+# `exec` in the wrapper replaces the process, so $0 becomes this script either
+# way and cannot reveal the wrapper -- the wrapper exports POD_SETUP_VIA instead.
+echo "==> pod_setup.sh starting $(date '+%Y-%m-%d %H:%M:%S')"
+echo "    script: ${BASH_SOURCE[0]}"
+[ -n "${POD_SETUP_VIA:-}" ] && echo "    via:    $POD_SETUP_VIA (wrapper)"
+
 set -u
 VOL=/workspace
 REPO=$VOL/hack-internal-representation-control

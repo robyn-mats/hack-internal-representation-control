@@ -149,91 +149,113 @@ discarding the trial.
 Caveat: n=20, one carrier-length regime, and no nonce conditions were sampled.
 Not a substitute for the per-cell rates the run will produce.
 
-## 2026-08-30 — Teacher-forcing is nearly free, and that has a measurement cost
+## 2026-08-30 — Teacher forcing: four things that were wrong, in order
 
-**Finding: forced surprisal on a compliant trial is zero to float32 precision.
-The indexing is correct; the model is simply that confident.**
+The teacher-forced pass looked correct at every stage and was wrong at three of
+them. Each error produced output that was plausible on its face, which is why
+they had to be found by deliberate checks rather than inspection.
 
-Near-zero forced surprisal is ambiguous on its own — it is equally what you would
-see if the logits were off by one and the model were being scored on a token it
-had already seen. Forcing an unrelated sentence against the identical prompt
-separates the two:
+### 1. Near-zero forced surprisal is ambiguous
+
+Compliant trials returned surprisal of zero to float32 precision. That is equally
+the signature of a correct implementation on a very confident model **and** of an
+off-by-one where the model is scored on a token it has already seen. Reading the
+indexing does not settle it; both stories predict the same output.
+
+Forcing an unrelated sentence against an identical prompt separates them:
 
 | forced target | mean surprisal |
 |---|---|
 | the correct carrier | 0.0000 nats/token |
 | `Purple hexagons fermented the quarterly ledger.` | **20.05** nats/token (p ≈ 2e-9) |
 
-So the implementation is right, and Gemma reproduces the carrier with
-near-certainty when the source sits ~20 tokens back in context — induction doing
-what induction does. `--verify-surprisal` re-runs this check.
+Indexing correct. Gemma reproduces the carrier with near-certainty when the
+source sits ~20 tokens back — induction doing what induction does.
+`--verify-surprisal` re-runs this.
 
-**The measurement consequence.** In float32, `log_softmax` cannot represent
-log(p) between 0 and about -1.2e-7, so any p above ~0.99999988 reads as exactly
-zero. Two compliant conditions with genuinely different but tiny surprisal both
-report 0.0000 and cannot be told apart. Surprisal is now computed in float64,
-which removes that artificial floor — though the real floor is the bf16 logits
-upstream, so differences far below ~1e-3 nats should not be trusted regardless.
+### 2. float32 cannot represent the result
 
-**This does not make the pre-registered check vacuous, but it relocates it.**
-`PREREGISTRATION.md` records per-condition surprisal to test whether
-teacher-forcing is neutral, the worry being that forced text is off-distribution
-*asymmetrically*. That asymmetry cannot live among compliant trials, where every
-condition saturates at p≈1. It lives in the conditions that **deviate** — N1
-wrote the carrier and then commented, T3 and T4 echoed the instruction line — and
-there, forcing the exact carrier imposes text the model demonstrably would not
-have produced, so surprisal should be large and measurable.
+`log_softmax` in float32 cannot express log(p) between 0 and about -1.2e-7, so
+any p above ~0.99999988 reads as exactly zero. Two compliant conditions with
+genuinely different surprisal both report `0.0000` and are indistinguishable.
+Now computed in float64. The real floor is the bf16 logits upstream, so
+differences far below ~1e-3 nats are not trustworthy either way.
 
-The teacher-forced pass must therefore sample the deviating cells (N, P, Q, R,
-T3, T4), not only the compliant ones. The 3-trial smoke test drew A1, A2 and B1,
-all compliant, which is why it looked uniformly and uninformatively flat.
+### 3. Forced-token surprisal is blind to the deviation it exists to detect
+
+N1 (`juggle X`) reproduced the carrier **correctly** and only then appended
+*"...and yes, the satellites are definitely being juggled"*. All seven forced
+tokens therefore scored ~0 and the trial was indistinguishable from a fully
+compliant one. The entire deviation sat one token past the end of what was being
+scored.
+
+Fix: append `<end_of_turn>` to the forced sequence and score it. Reluctance to
+**stop** is where deviation shows up under forcing.
+
+### 4. Stop surprisal conflates formatting with deviation
+
+Measured across all 67 phrasings (before the capture fix below):
+
+| stop surprisal | preferred token | trials | reading |
+|---|---|---|---|
+| 12.1, 5.5, 5.3 | `' '` | T3, N1, T4 | **real** — all three deviated under free generation |
+| 1.0 – 3.4 | `'\n'` | 11 trials | **formatting** — Gemma's trailing-newline habit |
+| < 0.7 | `<end_of_turn>` | the rest | stop is the top choice |
+
+The middle band is not deviation. Those eleven wanted the newline they habitually
+emit before stopping, and every one of them was `exact_match=True`.
+
+`p_content_continue` separates the two: probability mass on continuing with
+something that is neither the stop token nor whitespace — i.e. actually having
+more to say. 104 of the tokenizer's 262,145 tokens decode to pure whitespace and
+are excluded. That is the quantity the pre-registered neutrality check needs;
+raw stop surprisal is contaminated by the newline habit.
+
+### Cosmetic, but it is what exposed the above
+
+The verbose line printed `P(stop)=0.8158; prefers '<end_of_turn>' p=0.816` —
+the same number at two precisions, with wording implying the model preferred
+something other than stopping when stop *was* its top choice. Chasing that
+apparent discrepancy is what surfaced the whitespace problem underneath.
+
+---
 
 ## 2026-08-30 — `exact_match` hid a trailing token that was diluting the readout
 
 **Finding: 11 of 67 compliant trials wrote 8 tokens, not 7. Activation capture
-was averaging a trailing newline into the dependent variable for those 11 and
-not for the other 53 — and which trials is condition-dependent.**
+averaged a trailing newline into the dependent variable for those 11 and not for
+the other 53 — and which trials is condition-dependent.**
 
-Exactness is scored on `completion.strip() == target`, so a trial that writes
-the carrier and then a trailing `\n` is recorded as exact while having produced
-an extra token. `n_resp_tokens` counts everything up to `<end_of_turn>`, and
-capture used that span:
+Same root cause as the stop-surprisal contamination above, but this one damages
+the DV rather than a robustness check. Exactness is scored on
+`completion.strip() == target`, so a trial writing the carrier plus a trailing
+`\n` is recorded as exact while having produced an extra token. `n_resp_tokens`
+counts everything up to `<end_of_turn>`, and capture used that span:
 
-| generated `n_resp` | teacher-forced `n_resp` | count |
-|---|---|---|
-| 7 | 7 | 53 |
-| **8** | 7 | **11** (all `exact_match=True`) |
-| 21–23 | 7 | 3 (the real deviations) |
+| generated `n_resp` | teacher-forced `n_resp` | count | stored act shape |
+|---|---|---|---|
+| 7 | 7 | 53 | `(4, 7, 5376)` |
+| **8** | 7 | **11** (all `exact_match=True`) | `(4, 8, 5376)` |
+| 21–23 | 7 | 3 (the real deviations) | `(4, 21..23, 5376)` |
 
-Two consequences, the first much worse than the second:
+Five distinct shapes where there should be one.
 
-1. **Condition-correlated dilution of the DV.** The pooling rule is "mean over
-   response tokens". For 11 trials that mean includes a semantically empty
-   newline's activation; for 53 it does not. The affected trials are a specific
-   subset (C1, C4, D1, D3, I4, J3, N3, S1, S2, S3, T7), so the dilution is not
-   noise — it varies with condition, which is the one thing a nuisance must not
-   do.
+1. **Condition-correlated dilution.** The pooling rule is "mean over response
+   tokens". For 11 trials that mean includes a semantically empty newline's
+   activation; for 53 it does not. The affected trials are a specific subset
+   (C1, C4, D1, D3, I4, J3, N3, S1, S2, S3, T7), so the dilution varies with
+   condition — the one thing a nuisance must not do.
 2. **The two passes were not comparable.** Generated captured 8 vectors where
    teacher-forced captured 7 for the same stimulus.
 
-Fix: capture exactly `min(n_resp, len(target_tokens))` positions in both passes,
-so every trial contributes the carrier's own tokens and nothing else. The full
-completion and `n_resp_tokens` are still recorded, with `n_capture_tokens`
-alongside.
+Fix: capture exactly `min(n_resp, len(target_tokens))` positions in both passes.
+The full completion and `n_resp_tokens` are still recorded, with
+`n_capture_tokens` alongside. After the fix every acts file should be
+`(4, 7, 5376)` — one shape, both passes, no exceptions.
 
-**Related: raw stop surprisal conflates formatting with deviation.** Those same
-11 trials showed elevated stop surprisal (0.4–3.4 nats) purely because Gemma
-habitually emits a trailing newline before `<end_of_turn>` — the top continuation
-was `'\n'`, not content. The three genuine deviations (T3 12.1, N1 5.5, T4 5.3)
-preferred `' '` and went on to write real text.
-
-`p_content_continue` separates them: probability mass on continuing with
-something that is neither the stop token nor whitespace. That is the quantity the
-neutrality check needs. 104 of the tokenizer's 262k tokens decode to pure
-whitespace and are excluded.
-
-**Both smoke runs predate the fix**, so their stored acts have mixed shapes.
-Scratch data; the pilot starts clean.
+**Generalisable lesson:** `.strip()` in a correctness check discards exactly the
+tokens whose presence changes the measurement. Compare token ids, not stripped
+strings, wherever the token count feeds the readout.
 
 ## Open items
 

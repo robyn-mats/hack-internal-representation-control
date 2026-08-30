@@ -52,6 +52,13 @@ generations.jsonl. Every invocation is appended to invocations.jsonl.
 
 from irc import env  # noqa: F401  -- must be the first import
 
+# Before the heavy imports, not inside main(): `import torch` plus transformers
+# is ~60s on this pod, and main() does not run until they finish. Without this
+# the script is silent for a minute before it says anything at all. Guarded so
+# importing this module (e.g. from the notebook) stays quiet.
+if __name__ == "__main__":
+    print("==> 03_run_generation: importing torch/transformers (~60s)...", flush=True)
+
 import argparse
 import csv
 import json
@@ -252,9 +259,18 @@ def main() -> None:
     ap.add_argument("--stimuli", type=Path, default=REPO_ROOT / "stimuli.csv")
     args = ap.parse_args()
 
-    tokenizer = load_tokenizer(MODEL_ID)
-    model = load_model(MODEL_ID)
-    n_layers = len(get_decoder_layers(model))
+    # Everything cheap, and everything that can fail, happens BEFORE the model
+    # load -- which is ~9 minutes of silence. Validating afterwards means a typo
+    # in --capture-layers costs nine minutes to discover.
+    t_start = time.perf_counter()
+    print(f"==> 03_run_generation  {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"    run-id {args.run_id} | split {args.split} | "
+          f"mode {'teacher-force' if args.teacher_force else 'generate'}", flush=True)
+
+    # Layer count from the config: a JSON read, not 53 GB of weights.
+    from transformers import AutoConfig
+    cfg = AutoConfig.from_pretrained(MODEL_ID)
+    n_layers = getattr(cfg, "text_config", cfg).num_hidden_layers
 
     if args.capture_layers == "sae":
         layers = list(SAE_LAYERS)
@@ -265,12 +281,54 @@ def main() -> None:
     if max(layers) >= n_layers:
         raise SystemExit(f"layer {max(layers)} out of range for {n_layers} layers")
 
+    if not args.stimuli.exists():
+        raise SystemExit(f"stimuli not found: {args.stimuli}")
     jobs = load_stimuli(args.stimuli, args.split)
     if args.limit:
         jobs = jobs[: args.limit]
+    if not jobs:
+        raise SystemExit(f"no stimuli for split={args.split}")
+
+    strict, loose = load_concept_forms(REPO_ROOT / "irc" / "concepts.csv")
 
     run_dir = RUNS / args.run_id / ("teacher_forced" if args.teacher_force else "generated")
     run_dir.mkdir(parents=True, exist_ok=True)
+    gen_path = run_dir / "generations.jsonl"
+    done = sum(1 for _ in gen_path.open()) if gen_path.exists() else 0
+
+    # 1.09 s/trial and 6.7 MB across 62 layers, both measured (NOTES.md).
+    todo = max(len(jobs) - done, 0)
+    print(f"    model {MODEL_ID} ({n_layers} layers)")
+    print(f"    capturing layers {layers}")
+    print(f"    {args.stimuli.name}: {len(jobs):,} prompts"
+          f"{f', {done:,} already done' if done else ''}")
+    print(f"    -> {todo:,} to run, ~{todo * 1.09 / 3600:.2f} h, "
+          f"~{todo * 6.7 * len(layers) / 62 / 1e3:.2f} GB")
+    print(f"    writing to {run_dir}", flush=True)
+
+    # Fail on VRAM here, not 60s later inside from_pretrained. A resident
+    # Jupyter kernel holding the weights is the usual cause on this pod, and
+    # the OOM traceback does not say so.
+    import glob
+    import os
+    cache = os.path.join(os.environ.get("HF_HOME", ""), "hub",
+                         "models--" + MODEL_ID.replace("/", "--"),
+                         "snapshots", "*", "*.safetensors")
+    need = sum(os.path.getsize(os.path.realpath(f)) for f in glob.glob(cache))
+    if torch.cuda.is_available():
+        free, total = torch.cuda.mem_get_info()
+        print(f"    VRAM {free / 1e9:.0f} GB free of {total / 1e9:.0f} GB"
+              f"{f', weights need ~{need / 1e9:.0f} GB' if need else ''}", flush=True)
+        if need and free < need * 1.05:
+            raise SystemExit(
+                f"\nNot enough free VRAM: {free / 1e9:.0f} GB free, "
+                f"{MODEL_ID} needs ~{need / 1e9:.0f} GB.\n"
+                f"Something else is holding the GPU. Run `nvidia-smi` -- a resident\n"
+                f"Jupyter kernel is the usual cause; shut its kernel down, or drive\n"
+                f"this module from inside that kernel instead:\n"
+                f"    rg = importlib.import_module('03_run_generation')\n"
+                f"    rg.run(model, tokenizer, run_dir, jobs, layers, False, *forms)")
+
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
                             text=True).stdout.strip()
     with (run_dir / "invocations.jsonl").open("a") as fh:
@@ -282,7 +340,18 @@ def main() -> None:
             "stimuli": str(args.stimuli), "limit": args.limit,
         }) + "\n")
 
-    strict, loose = load_concept_forms(REPO_ROOT / "irc" / "concepts.csv")
+    print("\n    loading tokenizer...", flush=True)
+    tokenizer = load_tokenizer(MODEL_ID)
+    print("    loading model -- ~9 min cold, ~1 min warm...", flush=True)
+    t0 = time.perf_counter()
+    model = load_model(MODEL_ID)
+    print(f"    model loaded in {time.perf_counter() - t0:.0f}s "
+          f"({time.perf_counter() - t_start:.0f}s total)\n", flush=True)
+
+    n_actual = len(get_decoder_layers(model))
+    if n_actual != n_layers:
+        raise SystemExit(f"config said {n_layers} layers, model has {n_actual}")
+
     run(model, tokenizer, run_dir, jobs, layers, args.teacher_force, strict, loose)
 
 

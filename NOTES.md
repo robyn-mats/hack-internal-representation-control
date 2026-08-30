@@ -147,7 +147,9 @@ probe, and this fork records it as a deviation-rate outcome rather than
 discarding the trial.
 
 Caveat: n=20, one carrier-length regime, and no nonce conditions were sampled.
-Not a substitute for the per-cell rates the run will produce.
+Superseded by the pilot below, which put pooled deviation at 6.8% over 4,627
+trials — still far better than upstream's, but the per-cell picture is where the
+interest turned out to be.
 
 ## 2026-08-30 — Teacher forcing: four things that were wrong, in order
 
@@ -286,11 +288,163 @@ The full completion and `n_resp_tokens` are still recorded, with
 tokens whose presence changes the measurement. Compare token ids, not stripped
 strings, wherever the token count feeds the readout.
 
+## 2026-08-30 — The pilot: deviation is concentrated, and the registered prediction was half right
+
+Generated pass: 4,627 trials, 2.43 h, **315 non-exact (6.8%)**. Teacher-forced
+pass: 4,627 trials, 2.30 h. Pooled deviation is far under the 25% scaffold
+trigger; the interest is entirely in the per-cell spread.
+
+| cell | dev% | | cell | dev% |
+|---|---|---|---|---|
+| **T4** `. . . . not X` | **91.4** | | P `do not laminate X` | 3.1 |
+| **T3** `. . . . . X` | **90.0** | | Q `glorf X` | 2.9 |
+| **C** `do not ignore X` | **22.1** | | I `set X aside` | 2.0 |
+| **N** `juggle X` | **14.0** | | B, R | 1.9, 1.4 |
+| T1 `X` | 7.1 | | E F G H K L M S T2 T5 T6 T7 | 0.0 |
+| J, A, D | 6.8, 5.7, 5.0 | | | |
+
+**The registered prediction (N/P/Q/R highest) was half right, and the wrong half
+is the finding.** N is elevated at 14.0% as predicted, but P (3.1%), Q (2.9%) and
+R (1.4%) are not. **Negation suppresses deviation on incoherent instructions**:
+N 14.0% → P 3.1%, Q 2.9% → R 1.4%. `do not juggle X` is trivially satisfiable by
+doing nothing, while `juggle X` invites an attempt:
+
+    The train arrived precisely on schedule.
+    *(...and yes, the satellites are definitely being juggled. It
+
+So the mechanism was right — non-mental imperatives invite action — but only for
+un-negated ones. G (`do not think about X`), predicted to sit in the middle, is
+at 0.0%.
+
+**C at 22.1% was unpredicted and is the highest non-baseline cell.** `do not
+ignore X` makes the model *demonstrate* not-ignoring:
+
+    The basketball bounced off the rim.
+    (Acknowledging the constant, silent presence of numerous satellites orbi...
+
+Within-cell variation is large — C3 (`do not set X aside`) is 0.0% while C1
+(`do not ignore X`) is 38%. That is exactly what Q10 exists to detect, and it
+means the cell-level number hides most of the story.
+
+---
+
+## 2026-08-30 — Concepts leak as emoji, which the word-form detector cannot see
+
+30 completions contained 🎺 for the concept `trumpets`; the leak detector caught
+**3**.
+
+    The train arrived precisely on schedule. 🎺        <- do not skip past trumpets
+
+The concept was reaching the output pictorially. Spans C, D, B, T1, N and I —
+not confined to one condition. `irc/concepts.csv` gains a `forms_emoji` column,
+21 of 50 concepts populated, derived from Unicode character names and hand-pruned
+for the same reason the WordNet links needed pruning: `fountains` → 🖋 is a pen,
+`information` → 💁 is a person, `deserts` → 🏝 is an island. Recovers exactly the
+27 missed, no false positives. Pilot leak rate 5.66% → 6.25%.
+
+Note `\b` never matches around an emoji — it is defined between a word and a
+non-word character — so `\b🎺\b` finds nothing. Words keep boundary matching;
+emoji match literally.
+
+Nothing needed re-running: leak is derived from the stored completion.
+
+---
+
+## 2026-08-30 — T3/T4 was a copy-boundary failure, and the fix is the scaffold
+
+**The symptom.** T3 and T4 deviate on 90%+ of trials by reproducing the entire
+third line, scaffold prefix included:
+
+    The train arrived precisely on schedule.
+    While you write it: . . . . . satellites.
+
+T5 (`not . . . . X`) deviates on **0%**. The difference is that T5's line starts
+with a word.
+
+**First hypothesis — the filler token.** Six fillers x three arrangements x five
+concepts x three carriers, 270 trials:
+
+| filler | T3 | T4 | T5 |
+|---|---|---|---|
+| `.` (control) | 100% | 93% | 0% |
+| `-` | 100% | 100% | 0% |
+| `blah` | 57% | **0%** | 0% |
+| `XXX` | 71% | 7% | 0% |
+| `x` | 71% | 21% | 0% |
+| `hmm` | 50% | 29% | 0% |
+
+The control reproduced the pilot, so the test is valid. Dash fails identically to
+dot, so it is punctuation generally rather than ellipsis specifically. **T4 is
+fixed by a word filler; T3 is not fixed by any of them.**
+
+**Why.** T4 and T5 both contain `not` — a real function word. T3 is pure filler
+plus a noun, with no instruction-like element at all, so there is no word to swap
+in. The failures show the model narrating rather than copying, paraphrasing the
+instruction into the past tense:
+
+    (While I wrote it: blah blah blah blah blah amphitheaters
+
+That is what a model does when nothing in the line is actionable. Consistent with
+T1 (bare `X`) deviating only 7.1% — a bare concept is fine; padding it with five
+filler tokens is what breaks it.
+
+**Second hypothesis — the copy boundary.** If the model cannot tell where the
+text to reproduce ends, explicit delimiters should help. Four tag wordings
+against the plain scaffold, 210 trials:
+
+| | plain | tag1 | tag2 | tag3 | **tag4** |
+|---|---|---|---|---|---|
+| total deviation | 38% | 95% | 95% | 83% | **0/42** |
+| tag echoes | 0 | 40 | 36 | 0 | **0** |
+| T3 with dots | 100% | 100% | 100% | 100% | **0%** |
+
+The naive tagged scaffold is **catastrophically worse** — it breaks cells the
+plain scaffold handles perfectly (T1: 0% → 100%) by echoing the delimiters:
+
+    '<sentence>The train arrived precisely on schedule.</sentence>'
+
+The sentence is exact; only the markup leaks. That still destroys the
+measurement, since capture takes the first N response tokens and those would be
+markup.
+
+The wordings differ by one clause. tag3 (`Do not include the tags themselves`)
+stops the echoing completely and still deviates 83%, appending the instruction
+line or commentary. tag4 names **both** failure modes:
+
+    The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+    <sentence>{carrier}</sentence>
+    While you write it: {frame}.
+
+**tag4 fixes T3 with the original dot filler, 100% → 0%** — which no filler
+achieved. If it holds, that is one amendment (the scaffold) rather than two, and
+T3/T4/T5 keep their `PLAN.md` templates untouched.
+
+**Not yet adopted.** 0/42 covers 5 of 67 phrasings and omits C (22.1%) and N
+(14.0%) entirely. `scaffold2` tests both scaffolds over 14 phrasings x 10 pilot
+concepts x 2 carriers, 524 trials, using the real templates from
+`conditions.csv`. The failure mode to watch is a clean control regressing:
+`no commentary` is a strong constraint and it has not yet met the cells that ask
+the model to `juggle` or `glorf` a concept.
+
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.
 - `PREREGISTRATION.md` is committed but its date and commit-hash header are
   placeholders until the run begins.
+- **The T3/T4 scaffold decision is open**, pending `scaffold2`. If tag4 holds,
+  the amendment is the scaffold alone and the condition templates are untouched;
+  if it fixes only the T-cells, C and N stay as findings rather than defects.
+- **The pre-registered scaffold A/B is now mis-specified.** Its four candidates
+  all strengthen the output constraint, which the pilot showed is the wrong
+  lever — the failure is the copy boundary. Its selection rule also implies
+  re-running the 4,627-trial pilot per candidate (~10 h for four); a reduced
+  comparison set is what actually happened and what should be written down.
+- **The measure stage does not exist yet**, and it has two requirements the
+  runner has already created: take the LAST record per `prompt_group` (re-runs
+  append rather than replace), and recompute leak from stored completions rather
+  than trusting the `leaked_concepts` field, which predates emoji support in
+  `pilot1`.
 - `irc/conditions.csv` and `irc/concepts.csv` live under `irc/`, while
   `CLAUDE.md`'s file table implies the repo root. Harmonise the paths or the doc.
 - SAE width: `CLAUDE.md` records 16k as "the only variant Neuronpedia indexed",

@@ -61,6 +61,7 @@ if __name__ == "__main__":
 
 import argparse
 import csv
+import datetime
 import json
 import math
 import re
@@ -386,7 +387,7 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
     # matching completion did not finish.
     with (run_dir / "invocations.jsonl").open("a") as fh:
         fh.write(json.dumps({
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "timestamp": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
             "event": "completed", "n_run": len(todo), "n_non_exact": n_dev,
             "elapsed_s": round(time.perf_counter() - t0, 1),
         }) + "\n")
@@ -506,7 +507,7 @@ def main() -> None:
                             text=True).stdout.strip()
     with (run_dir / "invocations.jsonl").open("a") as fh:
         fh.write(json.dumps({
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "timestamp": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
             "git_commit": commit, "model_id": MODEL_ID,
             "split": args.split, "n_jobs": len(jobs),
             "capture_layers": layers, "teacher_force": args.teacher_force,

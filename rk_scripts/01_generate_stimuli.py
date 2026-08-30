@@ -33,6 +33,7 @@ from irc import env  # noqa: F401  -- must be the first import
 
 import argparse
 import csv
+import datetime
 import json
 import random
 import subprocess
@@ -224,7 +225,7 @@ def main() -> None:
         "similarity_covariates": bool(sim_pair),
         "similarity_source": "carrier_similarity_L40.csv (readout layer 40)",
         "git_commit": commit,
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "timestamp": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
     }
     (args.out.parent / f"{args.out.stem}_meta.json").write_text(
         json.dumps(meta, indent=1))

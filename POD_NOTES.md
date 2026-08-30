@@ -165,6 +165,22 @@ PLAN.md is unused.** Two are held deliberately:
 | `gemma-3-4b-it` | 8.1 GB | dev profile at matched relative depth (layer 22/34 ~= 40/62 ~= 65%); named in `PREREGISTRATION.md` |
 | `Qwen3.5-4B` | 8.8 GB | **for the J-lens arm.** `anthropics/jacobian-lens` ships its examples on Qwen, and the plan is to get the walkthrough running there before pointing it at Gemma — Gemma 3 loads as a conditional-generation class rather than a plain causal LM, so the layer-access code likely needs adjusting. Debugging an unfamiliar method and an unfamiliar architecture at once is how a Sunday disappears. Conditional: the J-lens is third priority behind SAE latents and concept vectors, so this may never be used and can be reclaimed if the arm is dropped. |
 
+## Time zone
+
+Pod images run UTC; Robyn is in `America/New_York`. `pod_setup.sh` exports
+`TZ=America/New_York` (live and into `~/.bashrc`), so `date`, log lines and
+anything you read interactively are local.
+
+**Provenance timestamps do not depend on that.** They are written with an
+explicit UTC offset (`2026-08-30T17:23:48-04:00`), so a run is unambiguous no
+matter what `TZ` the process inherited. Without that, setting `TZ` would have
+silently started writing naive local times into the same files as naive UTC
+ones, with nothing to tell them apart later.
+
+**`artifacts/runs/pilot1/` predates the change** — its timestamps are naive and
+mean **UTC**. The teacher-forced pass inherited the old environment, so pilot1 is
+internally consistent.
+
 ## Storage budget for the generation runs
 
 Activations dominate everything else. At ~6.7 MB per trial across all 62 layers:

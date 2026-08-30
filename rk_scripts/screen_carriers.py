@@ -269,7 +269,7 @@ def save_outputs(
         "concept_case": "lowercased",
         "word_lists": "irc/words_paper.py",
         "git_commit": commit,
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "timestamp": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
         **(meta_extra or {}),
     }, indent=1, default=str))
 

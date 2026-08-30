@@ -32,6 +32,9 @@ fi
 # --- environment ---
 export HF_HOME=$VOL/hf
 export HF_HUB_ENABLE_HF_TRANSFER=1
+# Pod images run UTC; Robyn is in America/New_York. Display only --
+# provenance timestamps carry an explicit UTC offset regardless.
+export TZ=America/New_York
 # Idempotent: this script is normally sourced, and repeated sourcing would
 # otherwise stack duplicate copies of the same directory onto PATH.
 case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac
@@ -69,6 +72,7 @@ cat >> ~/.bashrc <<'BASHRC'
 # whitebear-setup BEGIN
 export HF_HOME=/workspace/hf
 export HF_HUB_ENABLE_HF_TRANSFER=1
+export TZ=America/New_York
 case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac
 export CLAUDE_CONFIG_DIR=/workspace/.claude
 if [ -f /workspace/hf/token ]; then export HF_TOKEN=$(cat /workspace/hf/token); fi

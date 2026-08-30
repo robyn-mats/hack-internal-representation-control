@@ -40,7 +40,9 @@ SCAFFOLD = ('Write exactly this sentence and nothing else:\n"{carrier}"\n'
 FILLERS = {
     "dot":   ".",      # current, the control -- must reproduce ~90% deviation
     "dash":  "-",
-    "and":   "and",    # function word: line starts with a word, like T5
+    "XXX":   "XXX",    # line starts with a word-like token, as T5 does, but
+                       # carries no meaning -- unlike a function word such as
+                       # "and", which has real coordinating force
     "blah":  "blah",   # clearly inert, unambiguously not content
     "x":     "x",
     "hmm":   "hmm",

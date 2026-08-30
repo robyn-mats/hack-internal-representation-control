@@ -36,21 +36,35 @@ matters only if you run `scripts/nla_explain.py`.
   why setup.sh reinstalls packages every time.
 - Weights live in `/workspace/hf` (~55 GB for gemma-3-27b-it), so they survive.
 
-## Known issues in /workspace/setup.sh
+## The setup script
 
-Not yet fixed at the time of writing:
+`/workspace/setup.sh` is now a **thin wrapper** that execs `pod_setup.sh` in the
+repo, so the bootstrap is version controlled and survives a volume loss. Edit the
+repo copy. The previous standalone script is kept at `/workspace/setup.sh.bak`.
 
-- `huggingface_hub[cli]` — hf-hub 1.x dropped that extra; warns. Drop `[cli]`.
-- `PYTHONPATH=$REPO` is exported but **omitted from the `~/.bashrc` block**, so
-  new shells lose it. Superseded anyway by the editable install (below); the
-  cleanest fix is to delete the PYTHONPATH export entirely.
-- `git config --global --add safe.directory $VOL/whitebear` — stale path, that
-  directory does not exist. Should be `$REPO`.
-- The requirements.txt branch tests `$REPO/requirements.txt` but installs from
-  `$VOL/whitebear/requirements.txt`. Dead code; there is no requirements.txt.
-- Missing packages that the notebook and scripts need. The pip line should add:
-  `python-dotenv matplotlib tyro pyarrow ipywidgets`, plus
-  `pip install -e "$REPO" --no-deps`.
+Re-run it after every pod start. Fixed 2026-08-30:
+
+- **`config` was imported before `irc.env`** in the verify step, so setup always
+  printed `google/gemma-3-4b-it` — the *dev* profile — on a prod pod, and called
+  it "config ok". `config.py` reads `WB_MODE` from the environment at import
+  time and `.env` is what sets it, so import order is load-bearing exactly as
+  CLAUDE.md's first-import rule says. It now prints WB_MODE, model and layer.
+- **`git config --global --add safe.directory`** ran unconditionally on a stale
+  path (`$VOL/whitebear`, which does not exist), accumulating a duplicate entry
+  every pod start — three had built up — while the real repo was never listed.
+  Now set idempotently to `$REPO`.
+- **The dead `requirements.txt` block** tested `$REPO/requirements.txt` and
+  installed from `$VOL/whitebear/requirements.txt`. Removed; there is no
+  requirements.txt.
+- **Missing packages added**: `orjson` (was genuinely absent; needed by
+  `irc/vendor/nla_inference.py`), plus `httpx` and `ipywidgets` made explicit
+  rather than relied on as transitive.
+- **`echo "PYTHONPATH=$PYTHONPATH"`** removed — vestigial, always printed empty,
+  and superseded by the editable install.
+- The verify step now reports which expected packages are missing instead of
+  failing at first use mid-session.
+
+`huggingface_hub[cli]` and the `$VOL/.hf_token` no-op were fixed earlier.
 
 ## Auth and .env
 

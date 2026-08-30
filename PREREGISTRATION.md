@@ -250,13 +250,16 @@ Run in this order, corrected as one family.
 | Q2 | G vs T1 | No significant difference. |
 | Q3 | **I vs G** | **Primary.** Direction not predicted — the four hypotheses in `PLAN.md` §5 predict different signs. |
 | Q3b | C vs A | Direction not predicted. |
+| Q3c | A vs I; B vs K | **Direction**, frame and negation held fixed. Direction not predicted. |
 | Q4 | K vs M | Direction not predicted. |
 | Q5 | G/I/K/M | Frame × negation interaction. |
 | Q5b | I vs J; K vs L | Direction not predicted. |
 | Q5c | C vs D; E vs F | Direction not predicted. |
 | Q5d | A/B/C/E | Frame × negation interaction on the **focus** side — the mirror of Q5. |
+| Q5e | L vs M | Morphological vs syntactic negation, declarative held fixed. Direction not predicted. |
+| Q5f | A vs D; B vs F | Double negation against **no** negation — composition. Direction not predicted. |
 | Q6 | H vs G | Direction not predicted. |
-| Q7 | I vs N/P vs Q/R/S | Direction not predicted. |
+| Q7 | I vs N/P vs Q/R/S vs T1 | Direction not predicted. |
 | Q8 | T1 vs T2; T1 vs T3; T3 vs T4; T4 vs T5 | Direction not predicted. |
 | Q9 | L1 vs T6 | L1 significantly below T6. **Sanity check — must pass.** |
 | Q10 | within-cell variance | Descriptive. |
@@ -280,9 +283,37 @@ Q10's descriptive variance check.
   filler does anything by itself; `T3 vs T4` is the negation test with filler
   present, parallel to `T1 vs T2` without it.
 
-Q8 absorbs its additions rather than becoming new family members, so the
-correction family grows by one (Q5d) — 12 tests, moving the primary contrast's
-detectable dz from 0.58 to 0.59.
+**Q3c, Q5e and Q5f close gaps found by enumerating every pair of cells differing
+in exactly one factor and checking it against the contrast list.**
+
+- **Q3c (A vs I; B vs K)** — **direction had no direct test.** It is one of the
+  three factors, yet no contrast compared a toward cell with an away cell at
+  matched frame and negation; the ordering was only inferable transitively from
+  `A > T1` (Q0) and `L < T1` (Q1). These are the maximal toward/away contrasts in
+  the design.
+- **Q5e (L vs M)** — the question `PLAN.md` §5 poses as Q5b, *"does morphological
+  negation behave like syntactic, or like none?"*, was only approached via `K`
+  (Q5b: `K vs L`; Q4: `K vs M`). This compares the two negation types directly,
+  and it is also the `irrelevant`-vs-`not relevant` comparison that motivates the
+  fork.
+- **Q5f (A vs D; B vs F)** — Q5c compares double negation against *single*
+  negation only. "Composed" means `D ≈ A`, so composition cannot be assessed
+  without the un-negated baseline.
+
+**Q7 additionally takes T1 as the floor of its gradient**, testing whether an
+incoherent instruction does anything beyond bare mention: if `glorf X ≈ T1`,
+nonsense instructions contribute nothing; if `glorf X > T1`, they do.
+
+Q7 and Q8 absorb their additions rather than becoming new family members, so the
+correction family is **15 tests** (Q0–Q10 plus Q3b, Q3c, Q5b–Q5f), moving the
+primary contrast's detectable dz from 0.58 to **0.60**.
+
+Single-factor pairs deliberately left untested, to protect power: direction at
+syntactic negation (`C vs G/H/P/R`, `E vs M`), which is redundant once Q3c tests
+it without negation; anything against `T6`, which Q9 anchors and which is a floor
+control rather than a comparison target; `T3 vs T7`, transitively covered; and
+`H vs I/J/M`, since H has two phrasings and Q6 pairs it with its matched
+comparator G.
 
 **Terminology is fixed** per `PLAN.md` §2 and used strictly: *suppressed* =
 below T7; *dampened* = below T1 but above T7; *not primed* = indistinguishable

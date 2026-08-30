@@ -66,6 +66,30 @@ Re-run it after every pod start. Fixed 2026-08-30:
 
 `huggingface_hub[cli]` and the `$VOL/.hf_token` no-op were fixed earlier.
 
+### Claude Code sessions do not survive a pod stop by default
+
+`~/.claude` — session transcripts, credentials, memory — is **container disk**.
+It is wiped on every pod stop, so `claude --continue` finds nothing the next
+morning even though the repo is untouched.
+
+`pod_setup.sh` now symlinks `~/.claude` to `$VOL/.claude`, which is on the
+volume. A symlink rather than `CLAUDE_CONFIG_DIR` because `bash pod_setup.sh`
+runs in a **subshell**: its exports never reach the shell you launch `claude`
+from, so the env var only ever worked in a fresh login shell.
+
+Two related fixes in the same commit:
+
+- The `~/.bashrc` block was written under `if ! grep -q 'whitebear-setup'`, so
+  once present it was **never updated**. The block on this pod had been carrying
+  a stale `$VOL/.hf_token` line and no `CLAUDE_CONFIG_DIR` for days. It is now
+  delimited by BEGIN/END markers and replaced on every run.
+- Transcripts already on container disk were copied to
+  `$VOL/.claude/projects/` by hand on 2026-08-30. Sessions from before that
+  date are only there because of that copy.
+
+Note the repo itself is never at risk — it is on the volume and pushed to
+GitHub. What was at risk was only the conversation history.
+
 ## Auth and .env
 
 `setup.sh` reads the HF token from `/workspace/.hf_token`, **which does not

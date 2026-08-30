@@ -28,17 +28,37 @@ mkdir -p "$CLAUDE_CONFIG_DIR"
 if   [ -f "$VOL/.hf_token" ];  then export HF_TOKEN=$(cat "$VOL/.hf_token")
 elif [ -f "$HF_HOME/token" ]; then export HF_TOKEN=$(cat "$HF_HOME/token"); fi
 
-# persist for future shells, only once
-if ! grep -q 'whitebear-setup' ~/.bashrc; then
+# Claude Code state (session transcripts, credentials, memory) lives under
+# ~/.claude, which is CONTAINER DISK and is wiped on every pod stop -- so
+# `claude --continue` would find nothing the next morning. Symlink it onto the
+# volume rather than relying on CLAUDE_CONFIG_DIR: `bash pod_setup.sh` runs in a
+# subshell, so its exports never reach the shell you launch claude from.
+mkdir -p "$VOL/.claude"
+if [ ! -L "$HOME/.claude" ]; then
+  if [ -d "$HOME/.claude" ]; then
+    cp -a "$HOME/.claude/." "$VOL/.claude/" 2>/dev/null || true
+    rm -rf "$HOME/.claude"
+  fi
+  ln -s "$VOL/.claude" "$HOME/.claude"
+fi
+
+# Persist for future shells. Replace the block rather than skipping when the
+# marker exists: the old guard was `if ! grep -q 'whitebear-setup'`, so a block
+# written by an earlier version was never updated -- one had been carrying a
+# stale $VOL/.hf_token line and no CLAUDE_CONFIG_DIR for days.
+if [ -f ~/.bashrc ]; then
+  sed -i '/# whitebear-setup BEGIN/,/# whitebear-setup END/d' ~/.bashrc
+  sed -i '/^# whitebear-setup$/,+5d' ~/.bashrc          # pre-marker legacy block
+fi
 cat >> ~/.bashrc <<'BASHRC'
-# whitebear-setup
+# whitebear-setup BEGIN
 export HF_HOME=/workspace/hf
 export HF_HUB_ENABLE_HF_TRANSFER=1
 export PATH="$HOME/.local/bin:$PATH"
 export CLAUDE_CONFIG_DIR=/workspace/.claude
 if [ -f /workspace/hf/token ]; then export HF_TOKEN=$(cat /workspace/hf/token); fi
+# whitebear-setup END
 BASHRC
-fi
 
 cat > ~/.tmux.conf <<'TMUX'
 set -g set-clipboard on

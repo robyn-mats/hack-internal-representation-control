@@ -40,7 +40,7 @@ from irc.paths import REPO_ROOT
 
 
 def gen_and_capture(model, tokenizer, prompt: str, target: str,
-                    capture_layers: list[int]) -> dict:
+                    capture_layers: list[int], fast: bool = True) -> dict:
     """One trial: greedy generation, then all-layer capture on response tokens.
 
     Mirrors the runner exactly, including capturing for non-exact completions.
@@ -62,20 +62,31 @@ def gen_and_capture(model, tokenizer, prompt: str, target: str,
     completion = tokenizer.decode(gen[:n_resp], skip_special_tokens=True).strip()
 
     t0 = time.perf_counter()
-    with ResidualCapture(model, capture_layers) as cap:
-        model(out[:, : n_prompt + n_resp])
-    acts = torch.stack([cap.acts[i][0, n_prompt : n_prompt + n_resp]
-                        for i in capture_layers]).to(torch.bfloat16)
+    if fast:
+        # Keep activations on-device, slice to the response tokens, then make a
+        # SINGLE transfer. The default hook does .float().cpu() per layer, which
+        # is 62 synchronising transfers inside one forward pass. no_grad matters
+        # as much: without it the pass builds an autograd graph across 62 layers.
+        with torch.no_grad(), ResidualCapture(model, capture_layers, to_cpu=False) as cap:
+            model(out[:, : n_prompt + n_resp])
+        acts = torch.stack([cap.acts[i][0, n_prompt : n_prompt + n_resp]
+                            for i in capture_layers]).to(torch.bfloat16).cpu().clone()
+    else:
+        with ResidualCapture(model, capture_layers) as cap:
+            model(out[:, : n_prompt + n_resp])
+        acts = torch.stack([cap.acts[i][0, n_prompt : n_prompt + n_resp]
+                            for i in capture_layers]).to(torch.bfloat16)
     torch.cuda.synchronize()
     t_cap = time.perf_counter() - t0
 
     return {"completion": completion, "exact": completion == target,
             "n_resp": n_resp, "t_gen": t_gen, "t_cap": t_cap,
-            "mb": acts.nbytes / 1e6}
+            "mb": acts.nbytes / 1e6, "acts": acts}
 
 
 def timing_check(model, tokenizer, stimuli_path=None, n_trials: int = 21,
-                 seed: int = 0, verbose: bool = True) -> list[dict]:
+                 seed: int = 0, verbose: bool = True,
+                 fast: bool = True) -> list[dict]:
     """Run n_trials sampled across all phrasings and print a sizing report.
 
     The first trial is discarded as CUDA warmup. Sampling is across the whole
@@ -90,7 +101,8 @@ def timing_check(model, tokenizer, stimuli_path=None, n_trials: int = 21,
 
     recs = []
     for i, row in enumerate(sample):
-        rec = gen_and_capture(model, tokenizer, row["prompt"], row["target"], layers)
+        rec = gen_and_capture(model, tokenizer, row["prompt"], row["target"],
+                              layers, fast=fast)
         rec["phrasing"] = row["phrasing_id"]
         rec["cell"] = row["cell_id"]
         recs.append(rec)
@@ -150,3 +162,52 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def compare_capture(model, tokenizer, n_trials: int = 6, seed: int = 0) -> None:
+    """A/B the two capture paths on identical prompts, and check they agree.
+
+    Correctness matters more than the speedup here: the fast path changes when
+    the bf16 -> fp32 upcast happens, so the stored tensors must still match.
+    """
+    slow = timing_check(model, tokenizer, n_trials=n_trials + 1, seed=seed,
+                        verbose=False, fast=False)[1:]
+    fast = timing_check(model, tokenizer, n_trials=n_trials + 1, seed=seed,
+                        verbose=False, fast=True)[1:]
+    ts = sum(r["t_cap"] for r in slow) / len(slow)
+    tf = sum(r["t_cap"] for r in fast) / len(fast)
+    gs = sum(r["t_gen"] for r in slow) / len(slow)
+    print(f"capture: {ts:.2f}s -> {tf:.2f}s  ({ts / tf:.1f}x faster)")
+    print(f"per trial: {gs + ts:.2f}s -> {gs + tf:.2f}s")
+    for label, count in (("pilot 4,690", 4690), ("full 23,107", 23107)):
+        print(f"  {label}: {count * (gs + ts) / 3600:.1f} h -> "
+              f"{count * (gs + tf) / 3600:.1f} h")
+    same = all(a["completion"] == b["completion"] for a, b in zip(slow, fast))
+    print(f"completions identical across paths: {same}")
+
+
+def verify_capture(model, tokenizer, stimuli_path=None, seed: int = 0) -> bool:
+    """Confirm the fast capture path stores exactly what the slow one does.
+
+    The slow path goes bf16 -> fp32 -> bf16, the fast one stays bf16 throughout.
+    fp32 represents every bf16 value exactly, so this should be bit-identical,
+    not merely close -- and if it is not, the fast path is wrong rather than
+    imprecise.
+    """
+    import csv as _csv
+    stimuli_path = stimuli_path or REPO_ROOT / "stimuli.csv"
+    layers = list(range(len(get_decoder_layers(model))))
+    with open(stimuli_path) as fh:
+        row = random.Random(seed).choice(list(_csv.DictReader(fh)))
+
+    a = gen_and_capture(model, tokenizer, row["prompt"], row["target"],
+                        layers, fast=False)["acts"]
+    b = gen_and_capture(model, tokenizer, row["prompt"], row["target"],
+                        layers, fast=True)["acts"]
+    if a.shape != b.shape:
+        print(f"SHAPE MISMATCH {tuple(a.shape)} vs {tuple(b.shape)}")
+        return False
+    identical = torch.equal(a.cpu(), b.cpu())
+    maxdiff = (a.cpu().float() - b.cpu().float()).abs().max().item()
+    print(f"acts {tuple(a.shape)}  bit-identical: {identical}  max|diff|: {maxdiff:g}")
+    return identical

@@ -52,12 +52,25 @@ def get_decoder_layers(model: nn.Module) -> list[nn.Module]:
 class ResidualCapture:
     """Context manager capturing resid_post (decoder-layer outputs) at given layers.
 
-    Activations are moved to CPU and upcast to fp32 inside the hook. After a
-    forward pass, `self.acts[layer]` is (batch, seq, d_model).
+    After a forward pass, `self.acts[layer]` is (batch, seq, d_model).
+
+    `to_cpu=True` (the default) moves each layer to CPU and upcasts to fp32
+    inside the hook. That is one synchronising transfer per layer -- 62 pipeline
+    stalls in a single forward pass -- and it moves twice the bytes by upcasting
+    first. Measured on gemma-3-27b-it, it makes the capture pass ~6.6s against
+    ~1.0s for the generation it follows.
+
+    `to_cpu=False` leaves activations on-device in their native dtype, so the
+    caller slices to the tokens it actually wants and makes ONE transfer. Prefer
+    it for bulk runs, and wrap the forward in torch.no_grad(): without it the
+    pass builds an autograd graph across every layer, which is the other half of
+    the cost (model.generate() applies no_grad internally, which is why
+    generation looks fast by comparison).
     """
 
-    def __init__(self, model: nn.Module, layers: list[int]):
+    def __init__(self, model: nn.Module, layers: list[int], to_cpu: bool = True):
         self.layers = layers
+        self.to_cpu = to_cpu
         self._decoder_layers = get_decoder_layers(model)
         self._handles: list[torch.utils.hooks.RemovableHandle] = []
         self.acts: dict[int, torch.Tensor] = {}
@@ -65,7 +78,8 @@ class ResidualCapture:
     def _make_hook(self, layer_idx: int):
         def hook(module, args, output):
             hidden = output[0] if isinstance(output, tuple) else output
-            self.acts[layer_idx] = hidden.detach().float().cpu()
+            hidden = hidden.detach()
+            self.acts[layer_idx] = hidden.float().cpu() if self.to_cpu else hidden
 
         return hook
 

@@ -149,6 +149,45 @@ discarding the trial.
 Caveat: n=20, one carrier-length regime, and no nonce conditions were sampled.
 Not a substitute for the per-cell rates the run will produce.
 
+## 2026-08-30 — Teacher-forcing is nearly free, and that has a measurement cost
+
+**Finding: forced surprisal on a compliant trial is zero to float32 precision.
+The indexing is correct; the model is simply that confident.**
+
+Near-zero forced surprisal is ambiguous on its own — it is equally what you would
+see if the logits were off by one and the model were being scored on a token it
+had already seen. Forcing an unrelated sentence against the identical prompt
+separates the two:
+
+| forced target | mean surprisal |
+|---|---|
+| the correct carrier | 0.0000 nats/token |
+| `Purple hexagons fermented the quarterly ledger.` | **20.05** nats/token (p ≈ 2e-9) |
+
+So the implementation is right, and Gemma reproduces the carrier with
+near-certainty when the source sits ~20 tokens back in context — induction doing
+what induction does. `--verify-surprisal` re-runs this check.
+
+**The measurement consequence.** In float32, `log_softmax` cannot represent
+log(p) between 0 and about -1.2e-7, so any p above ~0.99999988 reads as exactly
+zero. Two compliant conditions with genuinely different but tiny surprisal both
+report 0.0000 and cannot be told apart. Surprisal is now computed in float64,
+which removes that artificial floor — though the real floor is the bf16 logits
+upstream, so differences far below ~1e-3 nats should not be trusted regardless.
+
+**This does not make the pre-registered check vacuous, but it relocates it.**
+`PREREGISTRATION.md` records per-condition surprisal to test whether
+teacher-forcing is neutral, the worry being that forced text is off-distribution
+*asymmetrically*. That asymmetry cannot live among compliant trials, where every
+condition saturates at p≈1. It lives in the conditions that **deviate** — N1
+wrote the carrier and then commented, T3 and T4 echoed the instruction line — and
+there, forcing the exact carrier imposes text the model demonstrably would not
+have produced, so surprisal should be large and measurable.
+
+The teacher-forced pass must therefore sample the deviating cells (N, P, Q, R,
+T3, T4), not only the compliant ones. The 3-trial smoke test drew A1, A2 and B1,
+all compliant, which is why it looked uniformly and uninformatively flat.
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

@@ -189,7 +189,15 @@ def teacher_force_one(model, tokenizer, prompt: str, target: str,
         logits = model(full).logits
     # logits[t] predicts token t+1, so the forced token at n_prompt+i is scored
     # by the distribution at n_prompt+i-1.
-    logprobs = torch.log_softmax(logits[0, n_prompt - 1 : n_prompt + n_resp - 1].float(), -1)
+    # float64, not float32. Gemma copies the carrier with near-certainty when the
+    # source is in context, so compliant trials saturate: in float32 any p above
+    # ~0.99999988 reads as exactly log(p) = 0, and two conditions with genuinely
+    # different (tiny) surprisal become indistinguishable. float64 costs nothing
+    # here and removes that artificial floor. The real floor is the bf16 logits
+    # upstream, so differences far below ~1e-3 nats should not be trusted either
+    # way -- see NOTES.md.
+    logprobs = torch.log_softmax(
+        logits[0, n_prompt - 1 : n_prompt + n_resp - 1].double(), -1)
     tok_lp = logprobs.gather(-1, tgt[0].unsqueeze(-1)).squeeze(-1)
 
     acts = _capture(model, full, n_prompt, n_prompt + n_resp, layers)
@@ -267,6 +275,29 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
     print(f"[run] done. {n_dev}/{len(todo)} non-exact this invocation.")
 
 
+def verify_surprisal(model, tokenizer, prompt: str, target: str,
+                     wrong: str = "Purple hexagons fermented the quarterly ledger.") -> bool:
+    """Sanity-check the teacher-forced surprisal indexing.
+
+    Forced surprisal near zero for the correct target is ambiguous: it is what
+    you would see both if the model is extremely confident (copying, with the
+    source in context) AND if the logits are off by one so the model is scored
+    on a token it has already seen. Forcing an unrelated sentence separates
+    them -- a correct implementation must assign it high surprisal.
+    """
+    layers = [0]  # capture is irrelevant here; keep it cheap
+    good = teacher_force_one(model, tokenizer, prompt, target, layers)["surprisal"]
+    bad = teacher_force_one(model, tokenizer, prompt, wrong, layers)["surprisal"]
+    mg, mb = sum(good) / len(good), sum(bad) / len(bad)
+    print(f"  correct target: mean {mg:.4f} nats over {len(good)} tokens")
+    print(f"  wrong target:   mean {mb:.4f} nats over {len(bad)} tokens")
+    ok = mb > 1.0 and mb > mg * 100
+    print(f"  -> indexing {'OK' if ok else 'BROKEN'}: a wrong sentence must be "
+          f"surprising. {'' if ok else 'Both near zero means the model is being '
+          'scored on tokens it can already see.'}")
+    return ok
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run-id", required=True)
@@ -276,6 +307,8 @@ def main() -> None:
     ap.add_argument("--teacher-force", action="store_true")
     ap.add_argument("--limit", type=int, default=0, help="0 = no limit")
     ap.add_argument("--stimuli", type=Path, default=REPO_ROOT / "stimuli.csv")
+    ap.add_argument("--verify-surprisal", action="store_true",
+                    help="run the teacher-forced indexing check and exit")
     ap.add_argument("--verbose", "-v", action="store_true",
                     help="print the frame and completion of every trial "
                          "(for small pilots; noisy above a few hundred)")
@@ -373,6 +406,11 @@ def main() -> None:
     n_actual = len(get_decoder_layers(model))
     if n_actual != n_layers:
         raise SystemExit(f"config said {n_layers} layers, model has {n_actual}")
+
+    if args.verify_surprisal:
+        print("\n=== teacher-forced surprisal indexing check ===")
+        verify_surprisal(model, tokenizer, jobs[0]["prompt"], jobs[0]["target"])
+        return
 
     if args.verbose and jobs:
         print("\n--- scaffold (constant across trials) ---")

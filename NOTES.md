@@ -97,6 +97,8 @@ any experimental data existed.
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.
+- `PREREGISTRATION.md` is committed but its date and commit-hash header are
+  placeholders until the run begins.
 - `irc/conditions.csv` and `irc/concepts.csv` live under `irc/`, while
   `CLAUDE.md`'s file table implies the repo root. Harmonise the paths or the doc.
 - SAE width: `CLAUDE.md` records 16k as "the only variant Neuronpedia indexed",

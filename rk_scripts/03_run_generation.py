@@ -164,7 +164,7 @@ def _capture(model, out_ids, lo: int, hi: int, layers: list[int]) -> torch.Tenso
     """One forward pass, activations for token positions [lo, hi).
 
     to_cpu=False plus no_grad: the default hook does .float().cpu() per layer,
-    which is one synchronising transfer per layer inside a single forward pass,
+    which is one synchronizing transfer per layer inside a single forward pass,
     and without no_grad the pass builds an autograd graph across every layer.
     Together those made capture 87% of runtime (see NOTES.md).
     """

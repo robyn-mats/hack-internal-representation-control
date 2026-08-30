@@ -64,7 +64,7 @@ The screen and the readout answer different questions — "what is this sentence
 about" versus "what is the model representing while it writes" — and the screen
 is not bound to the Gemma Scope layers because it uses no SAE. Screening at 43.
 
-**2. Within-sentence z-scoring is blind to cluster contamination.** Standardising
+**2. Within-sentence z-scoring is blind to cluster contamination.** Standardizing
 cosine within a sentence across the 50 concepts asks whether one concept stands
 out. When several *related* concepts are elevated together they raise that
 sentence's own mean and sd, suppressing every individual z.
@@ -79,7 +79,7 @@ carriers (piano practice, furniture assembly, chef garnishing, crossword,
 seashells, comedian) shared nearly the same top five. Within-sentence z therefore
 measures how generic a sentence is, not what it is about.
 
-Standardising within *concept* (across sentences) removes attractors, but buries
+Standardizing within *concept* (across sentences) removes attractors, but buries
 broadly-evocative concepts: Oceans is close to many sentences, so its closeness
 to `Waves crashed against the rocky shoreline.` is unremarkable *for Oceans* and
 collapses from z 2.98 to 1.14. Neither marginal is sufficient alone. The gate
@@ -126,7 +126,7 @@ tensor, and completions match. The slow path goes bf16 → fp32 → bf16 and fp3
 represents every bf16 value exactly, so anything short of exact equality would
 have meant the fast path was wrong rather than less precise.
 
-The old behaviour remains the default so upstream's pipeline is unaffected.
+The old behavior remains the default so upstream's pipeline is unaffected.
 Note that `irc/pipeline.py::_generate_and_capture` still uses the slow path and
 would benefit identically.
 
@@ -142,7 +142,7 @@ across all 67 phrasings, **19 of 20** were exact.
 
 The single deviation is the interesting kind rather than a failure to copy: J3
 (`de-emphasize`) produced the target sentence *and then* a meta-comment about
-"the prompt's odd request". That is the behaviour families N/P/Q/R/S exist to
+"the prompt's odd request". That is the behavior families N/P/Q/R/S exist to
 probe, and this fork records it as a deviation-rate outcome rather than
 discarding the trial.
 
@@ -282,7 +282,7 @@ The full completion and `n_resp_tokens` are still recorded, with
 `n_capture_tokens` alongside. After the fix every acts file should be
 `(4, 7, 5376)` — one shape, both passes, no exceptions.
 
-**Generalisable lesson:** `.strip()` in a correctness check discards exactly the
+**Generalizable lesson:** `.strip()` in a correctness check discards exactly the
 tokens whose presence changes the measurement. Compare token ids, not stripped
 strings, wherever the token count feeds the readout.
 

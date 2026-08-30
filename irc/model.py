@@ -55,7 +55,7 @@ class ResidualCapture:
     After a forward pass, `self.acts[layer]` is (batch, seq, d_model).
 
     `to_cpu=True` (the default) moves each layer to CPU and upcasts to fp32
-    inside the hook. That is one synchronising transfer per layer -- 62 pipeline
+    inside the hook. That is one synchronizing transfer per layer -- 62 pipeline
     stalls in a single forward pass -- and it moves twice the bytes by upcasting
     first. Measured on gemma-3-27b-it, it makes the capture pass ~6.6s against
     ~1.0s for the generation it follows.

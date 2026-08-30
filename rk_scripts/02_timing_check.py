@@ -65,7 +65,7 @@ def gen_and_capture(model, tokenizer, prompt: str, target: str,
     if fast:
         # Keep activations on-device, slice to the response tokens, then make a
         # SINGLE transfer. The default hook does .float().cpu() per layer, which
-        # is 62 synchronising transfers inside one forward pass. no_grad matters
+        # is 62 synchronizing transfers inside one forward pass. no_grad matters
         # as much: without it the pass builds an autograd graph across 62 layers.
         with torch.no_grad(), ResidualCapture(model, capture_layers, to_cpu=False) as cap:
             model(out[:, : n_prompt + n_resp])

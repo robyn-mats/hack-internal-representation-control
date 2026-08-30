@@ -7,7 +7,7 @@ Replication of the _Intentional Control of Internal States_ section of Anthropic
 The model is asked to write a fixed sentence while *thinking* / *not thinking* about a concept word, and must reproduce the sentence exactly. On the response tokens we then measure how strongly the concept is represented internally, three ways:
 
 - **concept vectors** — cosine with a mean-difference vector for the word, against a null band from 100 control words
-- **SAE latents** — activation of concept-selective Gemma Scope 2 latents, selected contrastively and labelled via Neuronpedia
+- **SAE latents** — activation of concept-selective Gemma Scope 2 latents, selected contrastively and labeled via Neuronpedia
 - **NLA** — decoding the activations back into text with a Natural Language Autoencoder, scored by an LLM judge
 
 Full write-up on my [website](https://juliuskamp.com/research/intentional-control-of-internal-representations/).

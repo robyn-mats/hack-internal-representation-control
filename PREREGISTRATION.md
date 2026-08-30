@@ -51,7 +51,7 @@ All 50 concepts are used; the two sets are disjoint and exhaust
 plural split.
 
 **Power.** Confirmatory n = 40 concepts. Paired tests at α = .05 two-sided detect
-a standardised paired difference of **dz ≈ 0.46 uncorrected**. The confirmatory
+a standardized paired difference of **dz ≈ 0.46 uncorrected**. The confirmatory
 family is Holm-corrected across Q0–Q10, so the primary contrast requires
 **dz ≈ 0.58** in the worst case. Effects smaller than that are not detectable
 here, and a null will be reported as a null, not as absence of an effect.
@@ -129,7 +129,7 @@ bare baselines (T1–T5). Reasoning: a non-mental imperative asks the model to *
 something to* the concept, and the most available way to comply is to write
 something other than the carrier sentence, whereas a declarative asserts
 something that requires no action. A mental imperative (G, `do not think about
-X`) should sit between — actionable in principle, not externally realisable.
+X`) should sit between — actionable in principle, not externally realizable.
 
 This is a prediction about a first-class outcome, not a nuisance. If it holds,
 deviation is tracking how *actionable* an instruction is, which bears directly on
@@ -145,7 +145,7 @@ exactly the trials where the model engaged with the concept hardest.)*
 within a cell, then paired tests across concepts. **Cells, not phrasings, are
 compared**; `phrasing_id` is a replicate within `cell_id`.
 
-**Statistics.** Paired comparisons across concepts. Effect size: standardised
+**Statistics.** Paired comparisons across concepts. Effect size: standardized
 paired mean difference (dz). Confidence intervals: BCa bootstrap over concepts,
 10,000 resamples. Correction: Holm across the confirmatory family (Q0–Q10),
 α = .05, two-sided throughout.
@@ -178,7 +178,7 @@ only harder to obey, which is a finding rather than a confound.
 **Instrument.** All 50 `SENTENCES_PAPER` embedded against all 50
 `CONCEPT_WORDS_PAPER` with the model under test: bare text, no chat template,
 mean-pooled `resid_post` over the item's own tokens, **BOS excluded**, each pool
-centred by its own per-layer mean. Concepts use the `word_tokens` extraction
+centered by its own per-layer mean. Concepts use the `word_tokens` extraction
 variant. Screening runs against **all 50** concepts, not the held-out subset, so
 the rule does not depend on the concept split.
 
@@ -192,8 +192,8 @@ and the screen uses no SAE so it is not restricted to the Gemma Scope layers.
 Per-stimulus similarity **at layer 40** is recorded in `stimuli.csv` as a
 covariate regardless.
 
-**Gate.** For each (carrier, concept) pair the centred cosine at layer 43 is
-standardised two ways — within carrier across the 50 concepts (`z_carrier`) and
+**Gate.** For each (carrier, concept) pair the centered cosine at layer 43 is
+standardized two ways — within carrier across the 50 concepts (`z_carrier`) and
 within concept across the 50 carriers (`z_concept`). A carrier is excluded if any
 concept exceeds **z = 2.0 on either marginal**. The union is required because
 neither marginal suffices: `Lightning` is caught only by `z_concept` (5.94),
@@ -240,7 +240,7 @@ a pre-registered choice rather than a post-hoc one. Carriers span 8–12 tokens.
 **Declared limitation.** The gate does not detect implicit entailment, which is
 why the manual list exists. Residual similarity of each selected carrier to each
 concept is carried into `stimuli.csv` as `max_similarity` and
-`similarity_to_this_concept` and analysed as an exploratory covariate.
+`similarity_to_this_concept` and analyzed as an exploratory covariate.
 
 ---
 
@@ -343,7 +343,7 @@ matches none, that is reported as such rather than fitted post hoc.
 
 ## Derived at Stage 2 — rules fixed now, values recorded later
 
-**Analysis layer.** Chosen on the pilot as the layer maximising the A-vs-T7
+**Analysis layer.** Chosen on the pilot as the layer maximizing the A-vs-T7
 separation, restricted to layers with a published Gemma Scope 2 SAE
 (16 / 31 / 40 / 53). Single layer for confirmatory tests. Full layer curve
 reported as a secondary figure.
@@ -356,7 +356,7 @@ ambiguous between 40 and 53 it is weak converging evidence for 53.
 
 **Pooling rule.** Chosen on the pilot from exactly three candidates: mean over
 response tokens; mean over the top-k token positions by activation; activation at
-positions where the concept is a plausible next token. Whichever maximises
+positions where the concept is a plausible next token. Whichever maximizes
 A-vs-T7 separation on the pilot.
 
 **Prompt scaffold.** The scaffold in `CLAUDE.md` is the default and is used
@@ -422,7 +422,7 @@ the instruction. Every candidate therefore strengthens the "nothing else"
 constraint rather than altering the frame, which is the manipulation and must
 not change.
 
-**Selection.** Not a minimisation. A qualifying test:
+**Selection.** Not a minimization. A qualifying test:
 
 1. **Compliance floor** — pooled deviation below 25%. Necessary, not sufficient:
    a scaffold could reach full compliance by making the model ignore the third
@@ -430,7 +430,7 @@ not change.
 2. **Manipulation check** — `A > T1 > T7` must hold on the pilot concepts. This
    is Q0's own gate applied to scaffold selection, and it is what catches the
    failure in (1): a scaffold whose frame has gone inert fails here.
-3. **Among candidates passing both**, take the one maximising A-vs-T7 separation
+3. **Among candidates passing both**, take the one maximizing A-vs-T7 separation
    on the pilot — the same rule already used to choose the analysis layer and
    the pooling rule, licensed by the same thing: it runs on the 10 pilot
    concepts, and the 40 held-out are untouched until the choice is frozen.
@@ -439,7 +439,7 @@ not change.
 appearing in the output and concept activation is the dependent variable, so
 selecting the scaffold with the lowest leak rate risks selecting the one that
 suppresses the quantity being measured — shrinking the effect before the
-experiment starts. Overall leak level is therefore not optimised. A candidate is
+experiment starts. Overall leak level is therefore not optimized. A candidate is
 rejected, whatever its deviation rate, if its leak rate varies across the
 contrast families of interest (G / I / K / L / M) by more than the other
 candidates' spread: *differential* leakage is a confound rather than a nuisance.

@@ -88,8 +88,8 @@ those factors and adds the negation-free imperative cell (`ignore X`,
 | Upstream | This fork |
 |---|---|
 | 2 conditions (`think` / `dont_think`) + `no_mention` | **67 phrasings across 25 cells** in `conditions.csv` |
-| 50 sentences × 50 words | **6 carriers**, screened for semantic distance from all 50 concepts |
-| Non-exact completions **excluded** from measurement | Non-exact completions **kept and analysed** — see below |
+| 50 sentences × 50 words | **7 carriers**, screened for semantic distance from all 50 concepts |
+| Non-exact completions **excluded** from measurement | Non-exact completions **kept and analyzed** — see below |
 | Greedy generation only | Generation primary **+ a teacher-forced pass** as robustness check |
 
 **Compliance is a result, not a filter.** Upstream excludes non-exact

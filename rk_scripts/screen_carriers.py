@@ -302,14 +302,14 @@ SCREEN_CONCEPTS = CONCEPT_WORDS_PAPER
 def pair_table(long_df, layer: int = SCREEN_LAYER, variant: str = SCREEN_VARIANT):
     """Per (carrier, concept) contamination scores at one layer.
 
-    Three columns, because no single normalisation is sufficient:
+    Three columns, because no single normalization is sufficient:
 
-      z_carrier  cosine standardised within each carrier, across the 50
+      z_carrier  cosine standardized within each carrier, across the 50
                  concepts -- "does this concept stand out for this sentence?"
                  Blind to CLUSTER contamination: several related concepts
                  elevated together raise the sentence's own mean and sd, which
                  suppresses each individual z.
-      z_concept  standardised within each concept, across the carriers --
+      z_concept  standardized within each concept, across the carriers --
                  "is this concept unusually close to this sentence, versus
                  other sentences?" Kills generic attractors (a handful of
                  low-frequency nouns sit near every bland sentence and would

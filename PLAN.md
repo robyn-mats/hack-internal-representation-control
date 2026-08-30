@@ -273,7 +273,7 @@ relied on.
 The second is the reason teacher-forcing cannot be primary: if the model deviates
 on 60% of `G` trials and 5% of `L` trials, forcing pushes `G` further
 off-distribution, and the between-condition difference partly measures surprise
-at imposed text — an artefact correlated with the manipulated factor.
+at imposed text — an artifact correlated with the manipulated factor.
 
 Record per-condition surprisal of the forced tokens. Flat surprisal means
 teacher-forcing is near-neutral; surprisal tracking condition means it is not.
@@ -282,7 +282,7 @@ teacher-forcing is near-neutral; surprisal tracking condition means it is not.
 
 A reduced readout need not mean anything acted on the concept:
 
-- **Norm competition.** Cosine is normalised, so added content lowers similarity
+- **Norm competition.** Cosine is normalized, so added content lowers similarity
   even at constant absolute contribution.
 - **Attention budget.** Softmax sums to one; instruction tokens take attention
   from X's tokens.
@@ -294,7 +294,7 @@ Four checks, three of them re-reads of activations already collected:
 
 1. **Read out a second, unrelated concept under every condition.** Dilution is
    indiscriminate; suppression is selective.
-2. **Report raw projection alongside cosine.** Normalisation is where norm
+2. **Report raw projection alongside cosine.** Normalization is where norm
    competition bites.
 3. **Check reduction against `n_prompt_tokens`.** Dilution scales with added content.
 4. **Family N is the control.** Directionally neutral but adds instruction

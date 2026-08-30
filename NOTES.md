@@ -205,11 +205,40 @@ Measured across all 67 phrasings (before the capture fix below):
 The middle band is not deviation. Those eleven wanted the newline they habitually
 emit before stopping, and every one of them was `exact_match=True`.
 
-`p_content_continue` separates the two: probability mass on continuing with
-something that is neither the stop token nor whitespace — i.e. actually having
-more to say. 104 of the tokenizer's 262,145 tokens decode to pure whitespace and
-are excluded. That is the quantity the pre-registered neutrality check needs;
-raw stop surprisal is contaminated by the newline habit.
+### 5. Excluding whitespace inverts the answer
+
+The obvious fix — mass on continuing with something that is neither the stop
+token nor whitespace — is wrong, and wrong in the direction that matters. N1
+scored `P(content) = 0.0000`, the *lowest* possible, while being one of the three
+trials that genuinely continued.
+
+**Whitespace is a prefix to continuation, not an alternative to stopping.**
+
+    compliant:  carrier -> '\n'  -> <end_of_turn>
+    N1:         carrier -> ' '   -> '\n\n' -> '*(...and yes, the satellites'
+
+Both put their mass on whitespace at the stop position. One token of lookahead
+cannot separate them, and excluding whitespace scores the continuing trial at
+zero.
+
+Fix: walk the greedy path forward while it stays whitespace (at most 3 steps),
+accumulating P(stop) along the way. `p_stop_soon` answers "would this have ended
+the turn"; `p_stop_direct` is the immediate P(stop); `ws_path` and
+`after_ws_token` record the route taken and what it wanted to write next. One
+extra forward pass in the common case.
+
+### What the stop measure is actually for
+
+All 67 generated completions begin with the carrier **verbatim** — token ids
+compared, not stripped strings. So on the captured span, teacher forcing imposes
+nothing the model would not have written, and the pre-registered neutrality check
+on the activations passes trivially and correctly.
+
+The stop measure is therefore not testing that. It is a **graded** measure of
+deviation propensity where `exact_match` is binary: a trial 60% likely to
+continue that happened to stop is indistinguishable from one 1% likely, under
+exactness alone. `p_stop_soon` separates them, which is what makes per-cell
+deviation rates informative rather than merely countable.
 
 ### Cosmetic, but it is what exposed the above
 

@@ -200,7 +200,8 @@ def generate_one(model, tokenizer, prompt: str, target: str,
             "n_resp_tokens": n_resp, "n_capture_tokens": n_cap,
             "surprisal": None, "eot_surprisal": None,
             "eot_top_token": None, "eot_top_p": None,
-            "p_content_continue": None, "acts": acts}
+            "p_stop_direct": None, "p_stop_soon": None,
+            "ws_path": None, "after_ws_token": None, "acts": acts}
 
 
 def teacher_force_one(model, tokenizer, prompt: str, target: str,
@@ -240,16 +241,37 @@ def teacher_force_one(model, tokenizer, prompt: str, target: str,
     stop_row = logprobs[-1]
     top_lp, top_id = stop_row.max(-1)
 
-    # Preferring whitespace before stopping is formatting, not deviation: Gemma
-    # habitually emits a trailing newline. p_content_continue is the mass on
-    # continuing with something that is neither the stop token nor whitespace --
-    # i.e. actually having more to say. That is the quantity the neutrality
-    # check needs; raw stop surprisal conflates it with the newline habit.
+    # Whitespace is a PREFIX to continuation, not an alternative to stopping.
+    # A compliant trial writes "\n" then stops; a deviating one writes " " then
+    # keeps going. Both put their mass on whitespace at this position, so one
+    # token of lookahead cannot separate them -- and simply excluding whitespace
+    # scores the genuinely-continuing trial at zero, which is backwards.
+    #
+    # Walk the greedy path forward while it stays whitespace (at most 3 steps,
+    # since Gemma's habit is one or two), accumulating the probability of
+    # stopping along the way. p_stop_soon is then "would this have ended the
+    # turn", which is the question; p_stop_direct is the immediate P(stop).
+    ws_ids = set(_WHITESPACE_IDS.setdefault(id(tokenizer), _whitespace_ids(tokenizer)))
     probs = stop_row.exp()
-    benign = float(probs[eot_id])
-    for tid in _WHITESPACE_IDS.setdefault(id(tokenizer), _whitespace_ids(tokenizer)):
-        benign += float(probs[tid])
-    p_content = max(0.0, 1.0 - benign)
+    p_stop_direct = float(probs[eot_id])
+
+    p_stop_soon = p_stop_direct
+    p_path, path, after = 1.0, [], None
+    cur = torch.cat([ids, torch.tensor([tgt_ids], device=ids.device)], dim=1)
+    row = probs
+    for _ in range(3):
+        top_id = int(row.argmax())
+        if top_id not in ws_ids:
+            after = tokenizer.decode([top_id])
+            break
+        p_path *= float(row[top_id])
+        path.append(tokenizer.decode([top_id]))
+        cur = torch.cat([cur, torch.tensor([[top_id]], device=ids.device)], dim=1)
+        with torch.no_grad():
+            row = torch.log_softmax(model(cur).logits[0, -1].double(), -1).exp()
+        p_stop_soon += p_path * float(row[eot_id])
+    else:
+        after = tokenizer.decode([int(row.argmax())])
 
     # Capture excludes the stop token, matching the generated pass exactly.
     acts = _capture(model, full, n_prompt, n_prompt + n_resp, layers)
@@ -258,7 +280,8 @@ def teacher_force_one(model, tokenizer, prompt: str, target: str,
             "eot_surprisal": float(-tok_lp[n_resp]),
             "eot_top_token": tokenizer.decode([int(top_id)]),
             "eot_top_p": float(top_lp.exp()),
-            "p_content_continue": p_content,
+            "p_stop_direct": p_stop_direct, "p_stop_soon": min(1.0, p_stop_soon),
+            "ws_path": path, "after_ws_token": after,
             "n_capture_tokens": n_resp, "acts": acts}
 
 
@@ -298,7 +321,10 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
                 "exact_match": res["exact_match"],
                 "n_resp_tokens": res["n_resp_tokens"],
                 "n_capture_tokens": res["n_capture_tokens"],
-                "p_content_continue": res["p_content_continue"],
+                "p_stop_direct": res["p_stop_direct"],
+                "p_stop_soon": res["p_stop_soon"],
+                "ws_path": res["ws_path"],
+                "after_ws_token": res["after_ws_token"],
                 "leaked_concepts": detect_leaks(res["completion"], patterns),
                 "leaked_concepts_loose": detect_leaks(res["completion"], patterns_loose)
                                          if patterns_loose else None,
@@ -334,8 +360,9 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
                             else f"prefers {tok!r} (p={res['eot_top_p']:.3f})")
                     print(f"   stop:      P(stop)={pstop:.4f} "
                           f"({res['eot_surprisal']:.3f} nats), {pref}")
-                    print(f"   continue:  P(content)={res['p_content_continue']:.4f}"
-                          f"   <- whitespace excluded; this is real continuation")
+                    print(f"   stop soon: P={res['p_stop_soon']:.4f} "
+                          f"(direct {res['p_stop_direct']:.4f} + via whitespace "
+                          f"{''.join(res['ws_path'])!r}), then {res['after_ws_token']!r}")
 
             if i % 100 == 0 or i == len(todo):
                 el = time.perf_counter() - t0

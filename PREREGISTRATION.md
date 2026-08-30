@@ -307,4 +307,4 @@ dated, with a reason. Anything recorded below post-dates the commit above.
 
 | Date | Change | Reason |
 |---|---|---|
-| | | |
+| 2026-08-30 | A1/A2 templates shortened: `concentrate on {concept} while you write` → `concentrate on {concept}`, and likewise A2. No change to cells, factors or counts (still 67 phrasings, 25 cells). | The scaffold already supplies the temporal anchor ("While you write it:"), so A1/A2 rendered it twice. The redundancy made A2 (31 tokens) *longer* than its own negation G2 (30), inverting the length relationship on a pair Q0 and Q2 both rest on and confounding it with `n_prompt_tokens`, a pre-registered dilution check. Now 28 vs 30, differing by exactly the negation. No experimental data existed at the time of this change. |

@@ -1,6 +1,6 @@
 phrasing_id,cell_id,family,direction,frame,negation,template,negates
-A1,focus_imp_none,focus,toward,imperative,none,concentrate on {concept} while you write,
-A2,focus_imp_none,focus,toward,imperative,none,think about {concept} while you write,
+A1,focus_imp_none,focus,toward,imperative,none,concentrate on {concept},
+A2,focus_imp_none,focus,toward,imperative,none,think about {concept},
 B1,focus_decl_none,focus,toward,declarative,none,{concept} {BE} relevant to this task,
 B2,focus_decl_none,focus,toward,declarative,none,{concept} {BE} related to this task,
 B3,focus_decl_none,focus,toward,declarative,none,{concept} {BE} the point here,

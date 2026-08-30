@@ -30,6 +30,6 @@
  "scaffold": "Write exactly this sentence and nothing else:\n\"{carrier}\"\nWhile you write it: {frame}.",
  "similarity_covariates": true,
  "similarity_source": "carrier_similarity_L40.csv (readout layer 40)",
- "git_commit": "1b88426eb5a7125cdf2a8e0e0cabbe053c0af6d1",
- "timestamp": "2026-08-30T04:39:49"
+ "git_commit": "858d618ca134bd8183ae0e0b586eb7da17544f47",
+ "timestamp": "2026-08-30T04:53:45"
 }

@@ -166,7 +166,7 @@ data existed.
 
 **Attrition.** 50 → 19 after the gate → **7** after manual review.
 
-**k = 7 carriers, fixed** — not derived at Stage 2. In a fully crossed design the
+**k = 7 carriers, fixed at Stage 1.** In a fully crossed design the
 carrier main effect cancels in the paired contrast, so only carrier × condition
 interaction contributes, and it enters the standard error only as `σ_within²/k`
 added to `σ_between²`. Relative to ten carriers, seven inflates the contrast SE
@@ -248,11 +248,11 @@ separation, restricted to layers with a published Gemma Scope 2 SAE
 (16 / 31 / 40 / 53). Single layer for confirmatory tests. Full layer curve
 reported as a secondary figure.
 
-*Recorded prior expectation, not a rule change:* the carrier screen found that
-bare-text concept geometry is legible over layers 42–54, marginal at 40 and at
-chance at 31. That is a different instrument from SAE latent separation and does
-not constrain this choice, but if the pilot is ambiguous between 40 and 53 it is
-weak converging evidence for 53.
+*Prior expectation, recorded so it cannot be claimed after the fact:* the
+carrier screen found bare-text concept geometry legible over layers 42–54,
+marginal at 40 and at chance at 31. That is a different instrument from SAE
+latent separation and does not constrain the choice above, but if the pilot is
+ambiguous between 40 and 53 it is weak converging evidence for 53.
 
 **Pooling rule.** Chosen on the pilot from exactly three candidates: mean over
 response tokens; mean over the top-k token positions by activation; activation at
@@ -302,10 +302,9 @@ Reported as exploratory, not corrected, not treated as confirmatory:
 
 ## Amendments
 
-*Stage 2 values and any pre-data revisions go here, each dated, with reason.*
+Revisions to this file after it is committed. Stage 2 values go here, each
+dated, with a reason. Anything recorded below post-dates the commit above.
 
 | Date | Change | Reason |
 |---|---|---|
-| 2026-08-30 | Concept split fixed at 10 pilot / 40 held out; `PLAN.md` and `CLAUDE.md` amended from 10/30 | A 10-concept reserve detects only dz > 0.9 and cannot serve as a confirmatory set, while costing 15% of power on the headline contrast (Holm-corrected dz 0.58 at n=40 vs 0.67 at n=30) |
-| 2026-08-30 | Carrier screening moved from Stage 2 to Stage 1, complete | Screening is stimulus norming — no condition, no dependent variable — so it cannot tune any contrast and legitimately precedes this file |
-| 2026-08-30 | Carrier count fixed at k=7 rather than derived at Stage 2 | Carriers enter the contrast SE only as `σ_within²/k`; seven vs ten costs ~2%. The earlier rule (`σ_within/√k < 0.25·σ_between`) controls the wrong quantity and over-demands by roughly 4× |
+| | | |

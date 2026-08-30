@@ -42,6 +42,19 @@ matters only if you run `scripts/nla_explain.py`.
 repo, so the bootstrap is version controlled and survives a volume loss. Edit the
 repo copy. The previous standalone script is kept at `/workspace/setup.sh.bak`.
 
+**Source it, don't `bash` it:** `source /workspace/setup.sh`. Sourcing is how
+`HF_HOME`, `HF_TOKEN` and `CLAUDE_CONFIG_DIR` reach your current shell; running
+it with `bash` sets them only in a subprocess that then exits, so they reach
+future shells via `~/.bashrc` but not the one you are sitting in. Both work; only
+sourcing helps the shell you are about to run things from. Repeated sourcing is
+safe and does not stack duplicate PATH entries.
+
+**Do NOT source the `nla_server/` scripts.** `setup.sh`, `launch.sh` and
+`patches/apply_sglang_patches.sh` all use `set -euo pipefail` and bare `exit`,
+so sourcing them leaves `set -e` in your interactive shell — where the next
+command returning non-zero closes it — or exits it outright. Run those with
+`bash`.
+
 Re-run it after every pod start. Fixed 2026-08-30:
 
 - **`config` was imported before `irc.env`** in the verify step, so setup always
@@ -63,6 +76,12 @@ Re-run it after every pod start. Fixed 2026-08-30:
   and superseded by the editable install.
 - The verify step now reports which expected packages are missing instead of
   failing at first use mid-session.
+- **The wrapper used `exec`, which closed the ssh connection.** `exec` replaces
+  the calling process, so sourcing the wrapper replaced the login shell itself
+  and the session ended when the script did. Also removed `set -u` (it persisted
+  into the sourcing shell, making any unset variable an error afterwards) and
+  the bare `exit` (it would have closed the shell outright). PATH is now
+  idempotent under repeated sourcing.
 
 `huggingface_hub[cli]` and the `$VOL/.hf_token` no-op were fixed earlier.
 

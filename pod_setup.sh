@@ -32,7 +32,9 @@ fi
 # --- environment ---
 export HF_HOME=$VOL/hf
 export HF_HUB_ENABLE_HF_TRANSFER=1
-export PATH="$HOME/.local/bin:$PATH"
+# Idempotent: this script is normally sourced, and repeated sourcing would
+# otherwise stack duplicate copies of the same directory onto PATH.
+case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac
 export CLAUDE_CONFIG_DIR=$VOL/.claude
 mkdir -p "$CLAUDE_CONFIG_DIR"
 # $VOL/.hf_token never existed; `hf auth login` writes to $HF_HOME/token.
@@ -67,7 +69,7 @@ cat >> ~/.bashrc <<'BASHRC'
 # whitebear-setup BEGIN
 export HF_HOME=/workspace/hf
 export HF_HUB_ENABLE_HF_TRANSFER=1
-export PATH="$HOME/.local/bin:$PATH"
+case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac
 export CLAUDE_CONFIG_DIR=/workspace/.claude
 if [ -f /workspace/hf/token ]; then export HF_TOKEN=$(cat /workspace/hf/token); fi
 # whitebear-setup END

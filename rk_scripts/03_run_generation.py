@@ -272,6 +272,16 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
                 print(f"  {i}/{len(todo)}  {el / i:.2f}s/trial  "
                       f"eta {(len(todo) - i) * el / i / 3600:.1f}h  "
                       f"deviations {n_dev} ({n_dev / i:.0%})")
+    # Completion record. The invocation is written before the model loads, so an
+    # interrupted run leaves an invocation claiming work it never did. Pairing
+    # each invocation with a completion makes that visible: an invocation with no
+    # matching completion did not finish.
+    with (run_dir / "invocations.jsonl").open("a") as fh:
+        fh.write(json.dumps({
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "event": "completed", "n_run": len(todo), "n_non_exact": n_dev,
+            "elapsed_s": round(time.perf_counter() - t0, 1),
+        }) + "\n")
     print(f"[run] done. {n_dev}/{len(todo)} non-exact this invocation.")
 
 
@@ -393,6 +403,7 @@ def main() -> None:
             "split": args.split, "n_jobs": len(jobs),
             "capture_layers": layers, "teacher_force": args.teacher_force,
             "stimuli": str(args.stimuli), "limit": args.limit,
+            "event": "started",
         }) + "\n")
 
     print("\n    loading tokenizer...", flush=True)

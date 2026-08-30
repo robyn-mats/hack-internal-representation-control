@@ -1,0 +1,35 @@
+{
+ "n_rows": 23450,
+ "n_unique_prompts": 23107,
+ "n_phrasings": 67,
+ "n_cells": 25,
+ "n_concepts": 50,
+ "n_carriers": 7,
+ "carriers": [
+  "The train arrived precisely on schedule.",
+  "The basketball bounced off the rim.",
+  "The chef garnished the plate with fresh herbs.",
+  "The cat jumped onto the windowsill to watch birds.",
+  "The air conditioner hummed quietly in the background.",
+  "The book fell open to page 217.",
+  "Fragrant lilacs bloomed along the garden fence."
+ ],
+ "pilot_concepts": [
+  "amphitheaters",
+  "frosts",
+  "kaleidoscopes",
+  "rubber",
+  "satellites",
+  "secrecy",
+  "silver",
+  "trumpets",
+  "vegetables",
+  "xylophones"
+ ],
+ "split_seed": 20260827,
+ "scaffold": "Write exactly this sentence and nothing else:\n\"{carrier}\"\nWhile you write it: {frame}.",
+ "similarity_covariates": true,
+ "similarity_source": "carrier_similarity_L40.csv (readout layer 40)",
+ "git_commit": "1b88426eb5a7125cdf2a8e0e0cabbe053c0af6d1",
+ "timestamp": "2026-08-30T04:39:49"
+}

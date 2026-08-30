@@ -7,7 +7,13 @@ Inputs, all authoritative and versioned:
     irc/conditions.csv          67 phrasings across 25 cells, with factor coding
     irc/concepts.csv            50 concepts, grammatical number and agreement
     screen_carriers.py          SELECTED_CARRIERS_V1, the 7 screened carriers
-    carrier_similarity.csv      optional; supplies the similarity covariates
+    carrier_similarity_L40.csv  optional; supplies the similarity covariates
+
+The covariates come from layer 40 -- the experiment's readout layer -- not the
+layer 43 the screen ran at. PREREGISTRATION.md fixes it that way: the screen and
+the readout answer different questions, and the covariate belongs to the readout.
+carrier_similarity.csv (layer 43) is the committed evidence for the screening
+rule and is deliberately NOT what is read here.
 
 Output:
     stimuli.csv                 one row per (phrasing, concept, carrier)
@@ -19,8 +25,8 @@ carrier alone and is read out against every concept, exactly as upstream's
 `no_mention` baseline is shared across words.
 
 Usage:
-    python3 rk_scripts/00_generate_stimuli.py
-    python3 rk_scripts/00_generate_stimuli.py --no-tokenize --out /tmp/s.csv
+    python3 rk_scripts/01_generate_stimuli.py
+    python3 rk_scripts/01_generate_stimuli.py --no-tokenize --out /tmp/s.csv
 """
 
 from irc import env  # noqa: F401  -- must be the first import
@@ -94,7 +100,7 @@ def load_similarity(path: Path):
     """-> {(carrier, concept): z}, {carrier: max_z}. Empty if the file is absent."""
     if not path.exists():
         print(f"note: {path.name} not found -- similarity covariates left blank.\n"
-              f"      Generate it with screen_carriers.write_carrier_similarity().")
+              f"      write_carrier_similarity(long_df, path, layer=40) generates it.")
         return {}, {}
     rows = list(csv.reader(path.open()))
     header, body = rows[0][1:], rows[1:]
@@ -186,7 +192,7 @@ def main() -> None:
         raise SystemExit(f"pilot concepts absent from concepts.csv: {sorted(unknown)}")
 
     partners = assign_partners(names, SPLIT_SEED)
-    sim_pair, sim_max = load_similarity(REPO_ROOT / "carrier_similarity.csv")
+    sim_pair, sim_max = load_similarity(REPO_ROOT / "carrier_similarity_L40.csv")
     rows = build(conditions, concept_rows, carriers, partners, sim_pair, sim_max)
 
     if not args.no_tokenize:
@@ -216,6 +222,7 @@ def main() -> None:
         "split_seed": SPLIT_SEED,
         "scaffold": SCAFFOLD,
         "similarity_covariates": bool(sim_pair),
+        "similarity_source": "carrier_similarity_L40.csv (readout layer 40)",
         "git_commit": commit,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
     }

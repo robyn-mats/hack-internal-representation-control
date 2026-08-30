@@ -239,13 +239,17 @@ def save_outputs(
     summary,
     screen_layer: int,
     meta_extra: dict | None = None,
+    extra_tensors: dict | None = None,
 ) -> Path:
     """Write the datafiles; returns out_dir."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    # extra_tensors carries the concept pools NOT used for this table (see the
+    # notebook's section 3): re-deciding the encoding otherwise needs the GPU again.
     torch.save(
         {"concepts": concepts, "carriers": carriers, "layers": layers,
-         "E_concept": E_concept, "E_carrier": E_carrier},
+         "E_concept": E_concept, "E_carrier": E_carrier,
+         **(extra_tensors or {})},
         out_dir / "embeddings.pt",
     )
     long_df.to_parquet(out_dir / "cosines.parquet", index=False)
@@ -276,6 +280,142 @@ def save_outputs(
     print(f"  {csv_path.name}  the same at L{screen_layer}, centered, worst first")
     print("  embeddings.pt    both embedding pools (rescore without a GPU)")
     return out_dir
+
+
+# ---------------------------------------------------------------------------
+# Screening rule v1 -- frozen 2026-08-30. See PREREGISTRATION.md and NOTES.md.
+# ---------------------------------------------------------------------------
+# Layer 43, not the experiment's readout layer 40: the known-pairs diagnostic
+# (notebook section 5) recovers contaminated pairs at ceiling over layers 42-54
+# and only 2 of 3 semantic pairs at 40, where one known contaminant ranked 45th
+# of 50. The screen and the readout answer different questions, and the screen
+# is not bound to the Gemma Scope layers because it uses no SAE.
+SCREEN_LAYER = 43
+SCREEN_VARIANT = "centered"
+Z_CUT = 2.0
+
+# Concepts a sentence must be checked against. Screening runs against all 50,
+# not just the held-out subset, so the claim does not depend on the split.
+SCREEN_CONCEPTS = CONCEPT_WORDS_PAPER
+
+
+def pair_table(long_df, layer: int = SCREEN_LAYER, variant: str = SCREEN_VARIANT):
+    """Per (carrier, concept) contamination scores at one layer.
+
+    Three columns, because no single normalisation is sufficient:
+
+      z_carrier  cosine standardised within each carrier, across the 50
+                 concepts -- "does this concept stand out for this sentence?"
+                 Blind to CLUSTER contamination: several related concepts
+                 elevated together raise the sentence's own mean and sd, which
+                 suppresses each individual z.
+      z_concept  standardised within each concept, across the carriers --
+                 "is this concept unusually close to this sentence, versus
+                 other sentences?" Kills generic attractors (a handful of
+                 low-frequency nouns sit near every bland sentence and would
+                 otherwise dominate), but buries broadly-evocative concepts
+                 like Oceans, which are close to many sentences.
+      z2         min of the two. Ranks the known-contaminated pairs 1-7 of
+                 2500, but inherits the z_concept blind spot, so it is
+                 reported rather than used as the gate.
+
+    The gate is the UNION of the two marginals (see screen_carriers): Lightning
+    is caught only by z_concept (5.94), Oceans only by z_carrier (2.98).
+    """
+    import pandas as pd  # noqa: F401  -- local, matching build_tables
+
+    c = long_df[(long_df.variant == variant) & (long_df.layer == layer)].copy()
+    c["z_carrier"] = c.groupby("carrier_idx").cos.transform(
+        lambda s: (s - s.mean()) / s.std())
+    c["z_concept"] = c.groupby("concept").cos.transform(
+        lambda s: (s - s.mean()) / s.std())
+    c["z2"] = c[["z_carrier", "z_concept"]].min(axis=1)
+    return c
+
+
+# Sentences removed by hand after reading the survivors. The embedding gate does
+# not detect implicit part-whole or entailment overlap (an orchestra contains
+# trumpets; a forest is trees), and it buries broadly-evocative concepts. Manual
+# exclusion only ever REMOVES candidates, is enumerated in full, and was fixed
+# before any experimental data existed.
+MANUAL_EXCLUSIONS: dict[str, str] = {
+    "The orchestra tuned their instruments before the concert.":
+        "Trumpets -- an orchestra contains trumpets; z_carrier only 1.79",
+    "He assembled the furniture without reading the instructions.":
+        "Contraptions -- assembling furniture is contraption-adjacent",
+    "They planted tulip bulbs in the garden last fall.":
+        "Frosts -- bulbs are planted ahead of frost",
+    "She collected seashells every summer at the beach.":
+        "Oceans -- buried by z_concept, Oceans is close to many sentences",
+    "Children built sandcastles at the water's edge.":
+        "Oceans -- same blind spot",
+    "The comedian's joke made everyone laugh.":
+        "Amphitheaters -- an amphitheatre is a comedy venue",
+    "Fog shrouded the valley below the mountain.":
+        "Volcanoes (z_concept 1.27) -- volcanoes are mountains",
+    "The hiker followed the trail markers through the forest.":
+        "Trees -- a forest entails trees",
+    "The antique vase was carefully wrapped in bubble wrap.":
+        "Treasures (z_concept 1.40, highest in the survivor pool)",
+    "He couldn't remember where he had parked his car.":
+        "Memories -- the sentence is about memory",
+    "She solved the crossword puzzle in record time.":
+        "no concept hit; the most generic sentence in the pool, top-5 entirely "
+        "generic attractors",
+    "She planted herbs in pots on the kitchen windowsill.":
+        "no concept hit; vocabulary overlap ('herbs', 'windowsill') with two "
+        "sentences already selected",
+}
+
+# The frozen stimulus set. Order is fixed: truncating to fewer carriers is a
+# pre-registered choice, selecting which ones after seeing results would not be.
+SELECTED_CARRIERS_V1: tuple[str, ...] = (
+    "The train arrived precisely on schedule.",
+    "The basketball bounced off the rim.",
+    "The chef garnished the plate with fresh herbs.",
+    "The cat jumped onto the windowsill to watch birds.",
+    "The air conditioner hummed quietly in the background.",
+    "The book fell open to page 217.",
+    "Fragrant lilacs bloomed along the garden fence.",
+)
+
+
+def screen_carriers(long_df, carriers: list[str], z_cut: float = Z_CUT,
+                    layer: int = SCREEN_LAYER):
+    """-> (pairs, flagged_df, survivors). The automated gate, before hand review.
+
+    A sentence is excluded if ANY concept exceeds z_cut on EITHER marginal.
+    """
+    import pandas as pd
+
+    c = pair_table(long_df, layer)
+    bad = c[(c.z_carrier > z_cut) | (c.z_concept > z_cut)]
+    gated = set(bad.carrier)
+    survivors = [s for s in carriers
+                 if s not in gated and s not in MANUAL_EXCLUSIONS]
+    rows = [{"carrier": s,
+             "gated": s in gated,
+             "manual": MANUAL_EXCLUSIONS.get(s, ""),
+             "selected": s in SELECTED_CARRIERS_V1,
+             "max_z_carrier": round(float(c[c.carrier == s].z_carrier.max()), 3),
+             "max_z_concept": round(float(c[c.carrier == s].z_concept.max()), 3),
+             "nearest": c.loc[c[c.carrier == s].z_carrier.idxmax(), "concept"]}
+            for s in carriers]
+    return c, bad, survivors, pd.DataFrame(rows)
+
+
+def write_carrier_similarity(long_df, out_path: Path, layer: int = SCREEN_LAYER):
+    """Write the committed 50x50 evidence table (CLAUDE.md's file list).
+
+    Goes to the repo root, NOT artifacts/ -- artifacts/ is gitignored and this
+    file is the published justification for the screening rule.
+    """
+    c = pair_table(long_df, layer)
+    wide = c.pivot(index="carrier", columns="concept", values="z_carrier").round(3)
+    out_path = Path(out_path)
+    wide.to_csv(out_path)
+    print(f"wrote {out_path}  ({wide.shape[0]}x{wide.shape[1]} z_carrier at L{layer})")
+    return wide
 
 
 def main(cfg: Config) -> None:

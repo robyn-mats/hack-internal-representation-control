@@ -43,6 +43,30 @@ DERIV_DROP = {
 }
 
 
+# Emoji whose Unicode name matches a concept but whose referent is something
+# else. Same failure as the WordNet derivational links: the name is a string,
+# not a meaning.
+EMOJI_DROP = {
+    "fountains": {"\U0001f58b"},                 # fountain PEN
+    "information": {"\U0001f481"},               # information desk PERSON
+    "bags": {"\U0001f4b0"},                      # money bag -- depicts money
+    "mirrors": {"\U0001faa9"},                   # mirror BALL (disco)
+    "deserts": {"\U0001f3dd"},                   # desert ISLAND
+    "silver": {"\U0001f71b"},                    # alchemical symbol, never used in text
+    "lightning": {"\U0001f584", "\U0001f5f1"},   # envelope/portable with lightning
+}
+
+# Obvious emoji the name match cannot find, because the Unicode name does not
+# contain the concept word.
+EMOJI_ADD = {
+    "oceans": "\U0001f30a",      # water wave
+    "boulders": "\U0001faa8",    # rock
+    "aquariums": "\U0001f420",   # tropical fish
+    "constellations": "\u2728",  # sparkles
+    "dust": "\U0001f4a8",        # dashing away (dust cloud)
+}
+
+
 def singular(word: str) -> str:
     """All 33 plurals in the paper's list are regular."""
     if word.endswith("ies"):
@@ -76,6 +100,35 @@ def derivational(word: str, number: str) -> list[str]:
     return sorted(out - DERIV_DROP.get(word, set()))
 
 
+def emoji_forms(word: str, number: str) -> list[str]:
+    """Emoji whose Unicode name names this concept, hand-pruned.
+
+    A concept can reach the output pictorially rather than lexically: the pilot
+    produced 30 completions containing a trumpet emoji for the concept
+    `trumpets`, and the word-form leak detector caught 3 of them. Emoji count as
+    leaks -- the concept surfaced -- so they belong in the form list.
+    """
+    import re
+    import unicodedata
+
+    lemma = (singular(word) if number == "plural" else word).upper()
+    ranges = [(0x2600, 0x27BF), (0x1F300, 0x1FAFF), (0x2B00, 0x2BFF)]
+    out = set()
+    for lo, hi in ranges:
+        for cp in range(lo, hi + 1):
+            ch = chr(cp)
+            try:
+                name = unicodedata.name(ch)
+            except ValueError:
+                continue
+            if re.search(rf"\b{lemma}\b", name):
+                out.add(ch)
+    out -= EMOJI_DROP.get(word, set())
+    if word in EMOJI_ADD:
+        out.add(EMOJI_ADD[word])
+    return sorted(out)
+
+
 def main() -> None:
     path = REPO_ROOT / "irc" / "concepts.csv"
     rows = list(csv.DictReader(path.open()))
@@ -83,18 +136,22 @@ def main() -> None:
         w, n = row["concept"], row["number"]
         row["forms"] = "|".join(inflectional(w, n))
         row["forms_derived"] = "|".join(derivational(w, n))
+        row["forms_emoji"] = "|".join(emoji_forms(w, n))
 
-    fields = ["concept", "number", "BE", "DO", "BELONG", "forms", "forms_derived"]
+    fields = ["concept", "number", "BE", "DO", "BELONG", "forms", "forms_derived",
+              "forms_emoji"]
     with path.open("w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=fields)
         writer.writeheader()
         writer.writerows(rows)
 
     n_deriv = sum(1 for r in rows if r["forms_derived"])
-    print(f"wrote {path}  ({len(rows)} concepts, {n_deriv} with derivational forms)")
+    n_emoji = sum(1 for r in rows if r["forms_emoji"])
+    print(f"wrote {path}  ({len(rows)} concepts, {n_deriv} with derivational forms, "
+          f"{n_emoji} with emoji)")
     for r in rows:
-        if r["forms_derived"]:
-            print(f"  {r['concept']:16s} +{r['forms_derived']}")
+        if r["forms_emoji"]:
+            print(f"  {r['concept']:16s} {r['forms_emoji']}")
 
 
 if __name__ == "__main__":

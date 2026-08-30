@@ -82,14 +82,21 @@ from irc.model import (
 from irc.paths import REPO_ROOT, RUNS
 
 
-def _pattern(forms: list[str]) -> re.Pattern:
-    """Word-boundary alternation, longest-first so `dusting` wins over `dust`.
+def _pattern(words: list[str], emoji: list[str] = ()) -> re.Pattern:
+    """Word-boundary alternation for words, literal alternation for emoji.
 
     Boundaries, not substrings: the pattern for `bags` must not fire on
-    "baggage".
+    "baggage". But `\b` is defined between a word and a non-word character, so
+    it never matches around an emoji -- `\b🎺\b` finds nothing. Emoji are
+    therefore matched literally, in a separate branch.
     """
-    alts = "|".join(re.escape(f) for f in sorted(forms, key=len, reverse=True))
-    return re.compile(rf"\b({alts})\b", re.IGNORECASE)
+    parts = []
+    if words:
+        alts = "|".join(re.escape(w) for w in sorted(words, key=len, reverse=True))
+        parts.append(rf"\b(?:{alts})\b")
+    if emoji:
+        parts.append("|".join(re.escape(e) for e in emoji))
+    return re.compile("|".join(parts), re.IGNORECASE)
 
 
 def load_concept_forms(path: Path) -> tuple[dict[str, re.Pattern], dict[str, re.Pattern]]:
@@ -113,9 +120,13 @@ def load_concept_forms(path: Path) -> tuple[dict[str, re.Pattern], dict[str, re.
     strict, loose = {}, {}
     for row in csv.DictReader(path.open()):
         base = (row.get("forms") or row["concept"]).split("|")
-        strict[row["concept"]] = _pattern(base)
+        emoji = [e for e in (row.get("forms_emoji") or "").split("|") if e]
+        # Emoji count as leaks under BOTH tiers: a concept reaching the output
+        # pictorially has surfaced just as much as one reaching it lexically,
+        # and unlike the derivational forms there is no sense ambiguity.
+        strict[row["concept"]] = _pattern(base, emoji)
         extra = [f for f in (row.get("forms_derived") or "").split("|") if f]
-        loose[row["concept"]] = _pattern(base + extra)
+        loose[row["concept"]] = _pattern(base + extra, emoji)
     return strict, loose
 
 

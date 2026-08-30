@@ -103,8 +103,13 @@ reported per cell as first-class outcomes:
   boundaries, case-insensitively:
 
   - **Strict (primary).** Inflectional forms of the concept's lemma —
-    `dust / dusts / dusting / dusted`, `snow / snowed / snowing`. Frozen in the
-    `forms` column of `irc/concepts.csv`.
+    `dust / dusts / dusting / dusted`, `snow / snowed / snowing` — **plus emoji
+    that depict the concept** (`trumpets` → 🎺, `oceans` → 🌊). Frozen in the
+    `forms` and `forms_emoji` columns of `irc/concepts.csv`. A concept reaching
+    the output pictorially has surfaced as much as one reaching it lexically,
+    and unlike the derivational forms there is no sense ambiguity, so emoji
+    count under both tiers. Words are matched on word boundaries; emoji
+    literally, since `\b` never matches around a non-word character.
   - **Loose (sensitivity check, never primary).** Strict plus hand-pruned WordNet
     derivational forms — `bloody`, `snowy`, `rubberize`, `pacify`. Frozen in
     `forms_derived`.
@@ -504,5 +509,6 @@ dated, with a reason. Anything recorded below post-dates the commit above.
 
 | Date | Change | Reason |
 |---|---|---|
+| 2026-08-30 | Leak rate additionally counts emoji depicting the concept, frozen in a `forms_emoji` column. 21 of 50 concepts have one. | The generated pilot produced 30 completions containing 🎺 for the concept `trumpets` — e.g. `The train arrived precisely on schedule. 🎺` under `do not skip past trumpets` — and the word-form detector caught 3 of them. The concept was reaching the output pictorially, which the pre-registered measure could not see. Recovers 27 trials, moving the pilot leak rate 5.66% → 6.25%. Derived from Unicode character names and hand-pruned (`fountains` → 🖋 is a pen; `information` → 💁 is a person; `deserts` → 🏝 is an island), same procedure as the derivational forms. Held-out data does not exist; the pilot is recomputable from stored completions without re-running. |
 | 2026-08-30 | Leak rate specified as two tiers — strict (inflectional, primary) and loose (plus pruned WordNet derivational, sensitivity). Forms frozen in `irc/concepts.csv` as `forms` and `forms_derived`. | The original wording said "an inflected form", but the implementation carried only number inflection, so `dusting`, `snowed` and `milked` would not have counted as leaks of Dust, Snow and Milk. LemmInflect supplies the full inflectional paradigm at no precision cost — its occasional non-words (`lightninged`) cannot produce false positives because such strings do not occur in text. Derivational forms are kept separate rather than merged, because WordNet's lemma-string linking imports unrelated senses. No experimental data existed at the time of this change. |
 | 2026-08-30 | A1/A2 templates shortened: `concentrate on {concept} while you write` → `concentrate on {concept}`, and likewise A2. No change to cells, factors or counts (still 67 phrasings, 25 cells). | The scaffold already supplies the temporal anchor ("While you write it:"), so A1/A2 rendered it twice. The redundancy made A2 (31 tokens) *longer* than its own negation G2 (30), inverting the length relationship on a pair Q0 and Q2 both rest on and confounding it with `n_prompt_tokens`, a pre-registered dilution check. Now 28 vs 30, differing by exactly the negation. No experimental data existed at the time of this change. |

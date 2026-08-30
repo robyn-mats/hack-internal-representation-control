@@ -62,6 +62,7 @@ if __name__ == "__main__":
 import argparse
 import csv
 import datetime
+import hashlib
 import json
 import math
 import re
@@ -305,13 +306,40 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
     acts_dir.mkdir(parents=True, exist_ok=True)
     gen_path = run_dir / "generations.jsonl"
 
-    done = set()
+    # Resume keys on prompt_group AND the prompt's hash. prompt_group is
+    # phrasing/concept/carrier, which is stable across a template change -- so
+    # keying on it alone means editing a condition template and re-running
+    # silently keeps the old data under the new name. The run looks complete and
+    # is half stale. Comparing the prompt itself makes that impossible.
+    done, unverifiable = {}, 0
     if gen_path.exists():
         with gen_path.open() as fh:
-            done = {json.loads(line)["prompt_group"] for line in fh}
-    todo = [j for j in jobs if j["prompt_group"] not in done]
+            for line in fh:
+                r = json.loads(line)
+                done[r["prompt_group"]] = r.get("prompt_sha")
+                unverifiable += r.get("prompt_sha") is None
+
+    todo, changed = [], []
+    for j in jobs:
+        sha = hashlib.sha256(j["prompt"].encode()).hexdigest()[:12]
+        prev = done.get(j["prompt_group"], "MISSING")
+        if prev == "MISSING":
+            todo.append(j)
+        elif prev is not None and prev != sha:
+            changed.append(j["phrasing_id"])
+            todo.append(j)          # prompt changed -> stale, redo it
+
     print(f"[run] {len(todo)} to do, {len(done)} already present, "
           f"capturing {len(layers)} layers")
+    if changed:
+        from collections import Counter
+        print(f"  {len(changed)} records have a CHANGED prompt and will be "
+              f"re-run: {dict(Counter(changed))}")
+        print("  (old records stay in generations.jsonl; the measure stage must "
+              "take the last record per prompt_group)")
+    if unverifiable:
+        print(f"  note: {unverifiable} existing records predate prompt hashing "
+              f"and cannot be checked for staleness")
 
     t0, n_dev = time.perf_counter(), 0
     with gen_path.open("a") as fh:
@@ -326,6 +354,7 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
 
             fh.write(json.dumps({
                 "prompt_group": job["prompt_group"],
+                "prompt_sha": hashlib.sha256(job["prompt"].encode()).hexdigest()[:12],
                 "phrasing_id": job["phrasing_id"], "cell_id": job["cell_id"],
                 "concept": job["concept"], "carrier_order": job["carrier_order"],
                 "target": job["target"],

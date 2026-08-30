@@ -17,11 +17,17 @@ echo "==> pod_setup.sh starting $(date '+%Y-%m-%d %H:%M:%S')"
 echo "    script: ${BASH_SOURCE[0]}"
 [ -n "${POD_SETUP_VIA:-}" ] && echo "    via:    $POD_SETUP_VIA (wrapper)"
 
-set -u
+# No `set -u`, and no bare `exit`: this script is routinely SOURCED so that its
+# exports reach the calling shell. `set -u` would persist into that shell and
+# make it error on any unset variable, and `exit` would close it outright --
+# which on an ssh login drops the connection.
 VOL=/workspace
 REPO=$VOL/hack-internal-representation-control
 
-[ -d "$REPO" ] || { echo "repo not found at $REPO"; exit 1; }
+if [ ! -d "$REPO" ]; then
+  echo "repo not found at $REPO"
+  return 1 2>/dev/null || exit 1
+fi
 
 # --- environment ---
 export HF_HOME=$VOL/hf

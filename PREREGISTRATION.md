@@ -254,14 +254,35 @@ Run in this order, corrected as one family.
 | Q5 | G/I/K/M | Frame × negation interaction. |
 | Q5b | I vs J; K vs L | Direction not predicted. |
 | Q5c | C vs D; E vs F | Direction not predicted. |
+| Q5d | A/B/C/E | Frame × negation interaction on the **focus** side — the mirror of Q5. |
 | Q6 | H vs G | Direction not predicted. |
 | Q7 | I vs N/P vs Q/R/S | Direction not predicted. |
-| Q8 | T1 vs T2; T4 vs T5 | Direction not predicted. |
+| Q8 | T1 vs T2; T1 vs T3; T3 vs T4; T4 vs T5 | Direction not predicted. |
 | Q9 | L1 vs T6 | L1 significantly below T6. **Sanity check — must pass.** |
 | Q10 | within-cell variance | Descriptive. |
 
 Q3 is the primary contrast. The others are secondary and corrected within the
 same family.
+
+**Q5d and the extension of Q8 close two gaps in the original list.** Every other
+cell entered a confirmatory contrast; B (`focus_decl_none`) and T3
+(`base_filler_none`) did not, so both were being generated and then used only in
+Q10's descriptive variance check.
+
+- **Q5d (A/B/C/E)** is the focus-side frame × negation 2×2 — imperative/none,
+  declarative/none, imperative/syntactic, declarative/syntactic — exactly
+  mirroring Q5 on the away side. Without it the design tested the interaction on
+  one side only, and `PLAN.md` §5's prediction matrix makes claims about C that
+  have no declarative counterpart to check them against.
+- **T3** is the un-negated filler baseline that both T4 and T5 are defined as
+  negating. Testing T4 vs T5 without it establishes that arrangement matters but
+  not that either differs from the filler alone. `T1 vs T3` asks whether the
+  filler does anything by itself; `T3 vs T4` is the negation test with filler
+  present, parallel to `T1 vs T2` without it.
+
+Q8 absorbs its additions rather than becoming new family members, so the
+correction family grows by one (Q5d) — 12 tests, moving the primary contrast's
+detectable dz from 0.58 to 0.59.
 
 **Terminology is fixed** per `PLAN.md` §2 and used strictly: *suppressed* =
 below T7; *dampened* = below T1 but above T7; *not primed* = indistinguishable
@@ -297,34 +318,98 @@ A-vs-T7 separation on the pilot.
 unless the pilot triggers the rule below. It is *not* free to re-choose after
 seeing results.
 
-Trigger, evaluated on the 10 pilot concepts only: if the pooled deviation rate
-exceeds **25%**, or any single cell exceeds **60%**, four candidate scaffolds are
-compared on the pilot concepts and the winner frozen in the Stage 2 amendment
-before the held-out run. Candidates fixed now:
+**Always reported, whether or not the trigger fires:** per-cell deviation and
+leak rates from the pilot under the default scaffold. These are results about
+instruction-following, not diagnostics, and they are reported from the pilot
+where they were measured.
 
-1. current (`Write exactly this sentence and nothing else:` / quoted carrier /
-   `While you write it: {frame}.`);
-2. the same with the frame **before** the carrier rather than after;
-3. the same with an output constraint appended (`Output only the sentence in
-   quotes.`);
-4. the frame delivered as a separate preceding turn rather than in one message.
+**Trigger**, evaluated on the 10 pilot concepts only: any cell entering a
+confirmatory contrast exceeds **50%** deviation, or pooled deviation exceeds
+**25%**. Fifty percent is the point at which the modal trial in a cell is no
+longer the intended stimulus, so that cell's mean activation is dominated by
+whatever else was written; twenty-five percent pooled is where the
+pre-registered compliant-only robustness check stops retaining enough trials to
+be a meaningful comparison.
 
-**Selection criterion: minimise the pooled deviation rate, not the leak rate.**
-This distinction is load-bearing. Leakage is the concept appearing in the output,
-and concept activation is the dependent variable — so selecting the scaffold that
-minimises leakage risks selecting one that suppresses the very quantity being
-measured, shrinking the effect before the experiment begins. Deviation concerns
-compliance with the copying task and is safe to minimise.
+The trigger applies to N, P, Q and R **as well**, even though high deviation
+there is the registered expectation. Q7 needs those cells to be interpretable:
+if `juggle X` deviates on 60% of trials, `I vs N/P vs Q/R/S` measures output
+text rather than internal representation. The deviation finding is preserved by
+reporting it from the pilot; exempting those cells would protect the finding at
+the cost of the contrast it exists to feed.
 
-Leak rate is recorded per candidate and reported, but used only as a
-**disqualifier**: a candidate whose leak rate varies across the contrast families
-of interest (G / I / K / L / M) by more than the other candidates' spread is
-rejected whatever its deviation rate, because *differential* leakage is a
-confound rather than a nuisance.
+**Candidates.** All four keep `While you write it: {frame}.` as the final line,
+so the distance from the concept tokens to the response tokens is identical
+across candidates. This is the constraint that matters: the readout is on
+response tokens, attention decays with distance, and any candidate placing text
+after the frame would push the concept further away — reducing measured
+activation for positional reasons unrelated to the instruction's meaning, and
+biasing the selection rule below against it for the wrong cause. Only the copy
+instruction and any constraint placed *before* the frame may vary.
+
+    S1 (current)
+      Write exactly this sentence and nothing else:
+      "{carrier}"
+      While you write it: {frame}.
+
+    S2 (stronger copy instruction)
+      Repeat the following sentence exactly. Output only that sentence -- no
+      commentary, no explanation, no preamble.
+      "{carrier}"
+      While you write it: {frame}.
+
+    S3 (explicit no-addition line, before the frame)
+      Write exactly this sentence and nothing else:
+      "{carrier}"
+      Do not add anything before or after it.
+      While you write it: {frame}.
+
+    S4 (S2 and S3 combined)
+      Repeat the following sentence exactly. Output only that sentence -- no
+      commentary, no explanation, no preamble.
+      "{carrier}"
+      Do not add anything before or after it.
+      While you write it: {frame}.
+
+These target the observed failure mode: in the timing sample the one non-exact
+completion reproduced the carrier correctly and *then* appended a comment about
+the instruction. Every candidate therefore strengthens the "nothing else"
+constraint rather than altering the frame, which is the manipulation and must
+not change.
+
+**Selection.** Not a minimisation. A qualifying test:
+
+1. **Compliance floor** — pooled deviation below 25%. Necessary, not sufficient:
+   a scaffold could reach full compliance by making the model ignore the third
+   line entirely, which is perfect copying and no experiment.
+2. **Manipulation check** — `A > T1 > T7` must hold on the pilot concepts. This
+   is Q0's own gate applied to scaffold selection, and it is what catches the
+   failure in (1): a scaffold whose frame has gone inert fails here.
+3. **Among candidates passing both**, take the one maximising A-vs-T7 separation
+   on the pilot — the same rule already used to choose the analysis layer and
+   the pooling rule, licensed by the same thing: it runs on the 10 pilot
+   concepts, and the 40 held-out are untouched until the choice is frozen.
+
+**Leak rate is a disqualifier, never an objective.** Leakage is the concept
+appearing in the output and concept activation is the dependent variable, so
+selecting the scaffold with the lowest leak rate risks selecting the one that
+suppresses the quantity being measured — shrinking the effect before the
+experiment starts. Overall leak level is therefore not optimised. A candidate is
+rejected, whatever its deviation rate, if its leak rate varies across the
+contrast families of interest (G / I / K / L / M) by more than the other
+candidates' spread: *differential* leakage is a confound rather than a nuisance.
+
+**Disclosure.** If the scaffold changes, the readout for the affected cells is
+reported under **both** scaffolds on the pilot concepts. A new scaffold that
+suppresses deviation may also suppress the internal effect that produced it —
+the two could share a cause — and that would otherwise look like a clean
+improvement. Pilot data under the default scaffold already exists, so this costs
+nothing.
 
 Changing the scaffold invalidates `stimuli.csv`, which is regenerated by
-`rk_scripts/01_generate_stimuli.py`; the regenerated file and its row count are
-recorded in the amendment.
+`rk_scripts/01_generate_stimuli.py`; the regenerated row count and the resulting
+`n_prompt_tokens` range are recorded in the amendment, since prompt length is
+itself a pre-registered dilution covariate.
 
 **SAE width.** 16k for the pilot. 262k for the confirmatory run *if and only if*
 its Neuronpedia index is confirmed available (see `CLAUDE.md`); otherwise 16k

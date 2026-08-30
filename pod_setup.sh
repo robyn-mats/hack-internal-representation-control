@@ -120,5 +120,32 @@ from irc import env  # noqa: F401
 import config
 print(f"profile: WB_MODE={config.MODE} model={config.MODEL_ID} layer={config.LAYER}")
 PYCHECK
+# --- pre-warm the model weights into page cache (background) ---
+# /workspace is a network filesystem, so a cold read of the ~52 GB of
+# safetensors IS the ~9 minute model load. This box has ~2 TB of RAM, so the
+# page cache holds them comfortably and every load after the first is ~1 minute.
+# Backgrounded, silent, and ionice'd to the idle class so it yields to anything
+# doing real work. Costs nothing that was not going to be paid anyway.
+#
+# Note: a model load started while this is still running contends with it for
+# the same network reads, so the first load of a session may not see the full
+# benefit. Check with `pgrep -f safetensors`.
+_prewarm_model=$(python3 - <<'PYWARM' 2>/dev/null
+from irc import env  # noqa: F401  -- must precede config; it sets WB_MODE
+import config
+print(config.MODEL_ID)
+PYWARM
+)
+if [ -n "$_prewarm_model" ]; then
+  _prewarm_dir="$HF_HOME/hub/models--${_prewarm_model//\//--}/snapshots"
+  if compgen -G "$_prewarm_dir/*/*.safetensors" > /dev/null 2>&1; then
+    _prewarm_gb=$(du -shL "$_prewarm_dir" 2>/dev/null | cut -f1)
+    echo "pre-warming $_prewarm_model ($_prewarm_gb) into page cache in the background"
+    # Subshell so no job-control chatter lands in an interactive shell.
+    ( ionice -c3 nice -n 19 cat "$_prewarm_dir"/*/*.safetensors > /dev/null 2>&1 & )
+  fi
+fi
+unset _prewarm_model _prewarm_dir _prewarm_gb
+
 echo "HF_HOME=$HF_HOME  HF_TOKEN=${HF_TOKEN:+set}"
 du -sh "$VOL/hf" 2>/dev/null

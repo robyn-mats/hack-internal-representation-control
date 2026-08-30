@@ -42,6 +42,16 @@ matters only if you run `scripts/nla_explain.py`.
 repo, so the bootstrap is version controlled and survives a volume loss. Edit the
 repo copy. The previous standalone script is kept at `/workspace/setup.sh.bak`.
 
+`/workspace/setup.sh` itself is not on the volume's git history, so a copy of it
+lives here as `pod_setup_wrapper.sh`. To recreate it:
+
+    cp /workspace/hack-internal-representation-control/pod_setup_wrapper.sh \
+       /workspace/setup.sh && chmod +x /workspace/setup.sh
+
+Either entry point works and they behave identically -- the wrapper sources
+`pod_setup.sh`. Prefer `/workspace/setup.sh`: it is the stable path if the repo
+moves or is re-cloned, and it fails with a clear message if the repo is absent.
+
 **Source it, don't `bash` it:** `source /workspace/setup.sh`. Sourcing is how
 `HF_HOME`, `HF_TOKEN` and `CLAUDE_CONFIG_DIR` reach your current shell; running
 it with `bash` sets them only in a subprocess that then exits, so they reach

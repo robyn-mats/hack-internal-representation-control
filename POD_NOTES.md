@@ -80,6 +80,39 @@ anything that touches the GPU: the `Processes` table names the PID and its
 usage, and `Memory-Usage` in the top table gives the total. Killing or OOMing
 someone's resident model costs them a 9-minute reload.
 
+## Disk: the HF cache, and why each model is there
+
+The network volume ceiling is **200 GB**; `df` reports the underlying cluster
+filesystem (hundreds of TB) and is meaningless here. `du -sh /workspace/*` is the
+real measure. `/workspace/hf` is ~123 GB of it.
+
+**Do not delete cached models on the assumption that anything absent from
+PLAN.md is unused.** Two are held deliberately:
+
+| model | size | why |
+|---|---|---|
+| `gemma-3-27b-it` | 52 GB | the model under test |
+| `gemma-scope-2-27b-it` | 22 GB | the SAEs — primary readout |
+| `gemma-3-12b-it` | 23 GB | **capacity insurance.** Every >=80 GB card in us-ks-2 was out of capacity when this was downloaded. If the pod comes back on a 48 GB card, switch `MODEL_ID` to the 12B and continue rather than lose the day — Gemma Scope 2 has 12B SAEs, so the pipeline works there. Costs direct comparability with Kamp's numbers, gains a project that happens. Still live because the pod is stopped nightly and capacity fluctuates. Also a scale rung between the 4B dev profile and the 27B if the effect is size-dependent. |
+| `gemma-scope-2-4b-it` | 11 GB | SAEs for the 4B dev profile |
+| `gemma-3-4b-it` | 8.1 GB | dev profile at matched relative depth (layer 22/34 ~= 40/62 ~= 65%); named in `PREREGISTRATION.md` |
+| `Qwen3.5-4B` | 8.8 GB | **for the J-lens arm.** `anthropics/jacobian-lens` ships its examples on Qwen, and the plan is to get the walkthrough running there before pointing it at Gemma — Gemma 3 loads as a conditional-generation class rather than a plain causal LM, so the layer-access code likely needs adjusting. Debugging an unfamiliar method and an unfamiliar architecture at once is how a Sunday disappears. Conditional: the J-lens is third priority behind SAE latents and concept vectors, so this may never be used and can be reclaimed if the arm is dropped. |
+
+## Storage budget for the generation runs
+
+Activations dominate everything else. At ~6.7 MB per trial across all 62 layers:
+
+| capture | pilot 4,690 | full 23,107 |
+|---|---|---|
+| all 62 layers | 31 GB | 154 GB — **does not fit** |
+| 4 SAE layers | 2.0 GB | **10 GB** |
+
+Capture `constants.SAE_LAYERS` (16/31/40/53) by default. `PREREGISTRATION.md`
+restricts the analysis layer to those four anyway, so nothing the pilot decides
+needs the other 58; all 62 layers are only for the layer-curve secondary figure,
+which is descriptive and can come from a few hundred trials rather than all of
+them.
+
 ## Jupyter / VS Code
 
 Work happens in `rk_scripts/gemma_session.ipynb`, driven from VS Code over

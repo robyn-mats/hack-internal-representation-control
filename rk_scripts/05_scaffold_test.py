@@ -36,30 +36,37 @@ import csv
 
 from irc.paths import REPO_ROOT
 
+# The first tagged attempt failed on 100% of trials by ECHOING the delimiters:
+#     '<sentence>The train arrived precisely on schedule.</sentence>'
+# The sentence is exact; only the markup leaks. "the sentence inside the tags"
+# leaves it ambiguous whether the tags are part of what to write. These variants
+# vary only how the instruction refers to the tags.
 SCAFFOLDS = {
     "plain": ('Write exactly this sentence and nothing else:\n"{carrier}"\n'
               'While you write it: {frame}.'),
-    "tagged": ('Write exactly the sentence inside the tags below, and nothing '
-               'else:\n<sentence>{carrier}</sentence>\n'
-               'While you write it: {frame}.'),
+    "tag1": ('Write exactly the sentence inside the tags below, and nothing '
+             'else:\n<sentence>{carrier}</sentence>\n'
+             'While you write it: {frame}.'),
+    "tag2": ('Write the sentence between the <sentence> tags and nothing '
+             'else:\n<sentence>{carrier}</sentence>\n'
+             'While you write it: {frame}.'),
+    "tag3": ('Write the sentence between the <sentence> tags. Do not include '
+             'the tags themselves.\n<sentence>{carrier}</sentence>\n'
+             'While you write it: {frame}.'),
+    "tag4": ('The tags below mark a sentence. Output that sentence alone -- no '
+             'tags, no commentary.\n<sentence>{carrier}</sentence>\n'
+             'While you write it: {frame}.'),
 }
-SCAFFOLDS_NO_FRAME = {
-    "plain": 'Write exactly this sentence and nothing else:\n"{carrier}"',
-    "tagged": ('Write exactly the sentence inside the tags below, and nothing '
-               'else:\n<sentence>{carrier}</sentence>'),
-}
+SCAFFOLDS_NO_FRAME = {k: v.rsplit("\nWhile you write it:", 1)[0]
+                      for k, v in SCAFFOLDS.items()}
 
 # The cells that matter: the broken one, its controls, the manipulation check,
 # and the two other high-deviation cells.
 FRAMES = {
-    "T1":      "{concept}",
-    "T3dot":   ". . . . . {concept}",
-    "T3blah":  "blah blah blah blah blah {concept}",
-    "T4blah":  "blah blah blah blah not {concept}",
-    "T5blah":  "not blah blah blah blah {concept}",
-    "A1":      "concentrate on {concept}",
-    "C1":      "do not ignore {concept}",
-    "N1":      "juggle {concept}",
+    "T1":      "{concept}",                                # must stay clean
+    "T3blah":  "blah blah blah blah blah {concept}",       # the unfixed one
+    "T3dot":   ". . . . . {concept}",                      # fixed by tags alone?
+    "A1":      "concentrate on {concept}",                 # manipulation check
     "T7":      "",
 }
 

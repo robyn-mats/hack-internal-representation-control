@@ -5,3 +5,4 @@ __pycache__/
 .env
 artifacts/
 scratch/
+.DS_Store

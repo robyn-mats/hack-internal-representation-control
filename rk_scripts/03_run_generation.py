@@ -199,7 +199,8 @@ def teacher_force_one(model, tokenizer, prompt: str, target: str,
 
 def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
         teacher_force: bool, patterns: dict[str, re.Pattern],
-        patterns_loose: dict[str, re.Pattern] | None = None) -> None:
+        patterns_loose: dict[str, re.Pattern] | None = None,
+        verbose: bool = False) -> None:
     acts_dir = run_dir / "acts"
     acts_dir.mkdir(parents=True, exist_ok=True)
     gen_path = run_dir / "generations.jsonl"
@@ -240,6 +241,24 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
             }) + "\n")
             fh.flush()
 
+            if verbose:
+                # The scaffold is constant; the frame (third line) is what
+                # varies, so print that rather than repeating the boilerplate.
+                lines = job["prompt"].splitlines()
+                frame = lines[2] if len(lines) > 2 else "(no third line -- T7)"
+                mark = "EXACT" if res["exact_match"] else "*** NOT EXACT ***"
+                leaks = detect_leaks(res["completion"], patterns)
+                print(f"\n[{i}/{len(todo)}] {job['phrasing_id']} {job['cell_id']}"
+                      f"  {job['concept'] or '-'}/c{job['carrier_order']}")
+                print(f"   frame: {frame}")
+                print(f"   got:   {res['completion']!r}  {mark}")
+                if leaks:
+                    print(f"   LEAK:  {leaks}")
+                if res["surprisal"]:
+                    sp = res["surprisal"]
+                    print(f"   surprisal: mean {sum(sp) / len(sp):.2f} "
+                          f"max {max(sp):.2f} nats over {len(sp)} tokens")
+
             if i % 100 == 0 or i == len(todo):
                 el = time.perf_counter() - t0
                 print(f"  {i}/{len(todo)}  {el / i:.2f}s/trial  "
@@ -257,6 +276,9 @@ def main() -> None:
     ap.add_argument("--teacher-force", action="store_true")
     ap.add_argument("--limit", type=int, default=0, help="0 = no limit")
     ap.add_argument("--stimuli", type=Path, default=REPO_ROOT / "stimuli.csv")
+    ap.add_argument("--verbose", "-v", action="store_true",
+                    help="print the frame and completion of every trial "
+                         "(for small pilots; noisy above a few hundred)")
     args = ap.parse_args()
 
     # Everything cheap, and everything that can fail, happens BEFORE the model
@@ -352,7 +374,13 @@ def main() -> None:
     if n_actual != n_layers:
         raise SystemExit(f"config said {n_layers} layers, model has {n_actual}")
 
-    run(model, tokenizer, run_dir, jobs, layers, args.teacher_force, strict, loose)
+    if args.verbose and jobs:
+        print("\n--- scaffold (constant across trials) ---")
+        print(jobs[0]["prompt"])
+        print("--- only the third line varies below ---")
+
+    run(model, tokenizer, run_dir, jobs, layers, args.teacher_force, strict, loose,
+        verbose=args.verbose)
 
 
 if __name__ == "__main__":

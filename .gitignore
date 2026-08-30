@@ -6,3 +6,4 @@ __pycache__/
 artifacts/
 scratch/
 .DS_Store
+filler_stimuli.csv

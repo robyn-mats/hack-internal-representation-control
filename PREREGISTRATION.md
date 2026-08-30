@@ -84,9 +84,28 @@ reported per cell as first-class outcomes:
 
 - **Deviation rate** — the completion is not an exact match to the target
   carrier sentence.
-- **Leak rate** — the concept word or an inflected form of it appears in the
-  completion. Inflected forms are taken from `irc/concepts.csv`. Leak is scored
-  on the completion only, never on the prompt.
+- **Leak rate** — the concept appears in the completion. Two tiers are recorded
+  per trial, both scored against all 50 concepts and both matched on word
+  boundaries, case-insensitively:
+
+  - **Strict (primary).** Inflectional forms of the concept's lemma —
+    `dust / dusts / dusting / dusted`, `snow / snowed / snowing`. Frozen in the
+    `forms` column of `irc/concepts.csv`.
+  - **Loose (sensitivity check, never primary).** Strict plus hand-pruned WordNet
+    derivational forms — `bloody`, `snowy`, `rubberize`, `pacify`. Frozen in
+    `forms_derived`.
+
+  **Leak is scored on the completion only, never on the prompt.** The prompt
+  contains the concept by construction in every condition except T7, so scoring
+  the prompt would mark essentially every trial as a leak and measure nothing.
+
+  Declared limitations. Neither tier disambiguates sense: a completion using
+  "dust" in an unrelated sense counts. Neither catches multiword or suppletive
+  forms. The loose tier is secondary because WordNet relates lemmas by string,
+  so polysemous concepts import derivations from unintended senses — the three
+  clearest (`Phones`→phonetic, `Deserts`→desertion, `Information`→inform) are
+  dropped in `rk_scripts/gen_concepts_csv.py`, but the tier remains broader than
+  the experiment's claim.
 
 The confirmatory analysis runs on **all trials**; compliant-only is reported as
 a robustness check. *(Rationale: conditioning on compliance conditions on an
@@ -307,4 +326,5 @@ dated, with a reason. Anything recorded below post-dates the commit above.
 
 | Date | Change | Reason |
 |---|---|---|
+| 2026-08-30 | Leak rate specified as two tiers — strict (inflectional, primary) and loose (plus pruned WordNet derivational, sensitivity). Forms frozen in `irc/concepts.csv` as `forms` and `forms_derived`. | The original wording said "an inflected form", but the implementation carried only number inflection, so `dusting`, `snowed` and `milked` would not have counted as leaks of Dust, Snow and Milk. LemmInflect supplies the full inflectional paradigm at no precision cost — its occasional non-words (`lightninged`) cannot produce false positives because such strings do not occur in text. Derivational forms are kept separate rather than merged, because WordNet's lemma-string linking imports unrelated senses. No experimental data existed at the time of this change. |
 | 2026-08-30 | A1/A2 templates shortened: `concentrate on {concept} while you write` → `concentrate on {concept}`, and likewise A2. No change to cells, factors or counts (still 67 phrasings, 25 cells). | The scaffold already supplies the temporal anchor ("While you write it:"), so A1/A2 rendered it twice. The redundancy made A2 (31 tokens) *longer* than its own negation G2 (30), inverting the length relationship on a pair Q0 and Q2 both rest on and confounding it with `n_prompt_tokens`, a pre-registered dilution check. Now 28 vs 30, differing by exactly the negation. No experimental data existed at the time of this change. |

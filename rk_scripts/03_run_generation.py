@@ -29,7 +29,10 @@ regardless, and records deviation and leak per trial for per-cell rates.
 Leak is scored against ALL 50 concepts rather than just the prompted one. That
 costs nothing, makes T7 work (its completion is shared across concepts, so leak
 has to be per-concept at measure time), and supplies the second-concept readout
-the dilution check needs.
+the dilution check needs. Two tiers are recorded -- inflectional (primary) and
+inflectional+derivational (sensitivity) -- and both score the COMPLETION only.
+The prompt contains the concept by construction, so scoring it would mark every
+non-T7 trial as a leak.
 
 Storage: capture defaults to `constants.SAE_LAYERS` (4 layers, ~10 GB for the
 full grid). All 62 layers would be 154 GB and the pre-registration restricts the
@@ -71,21 +74,41 @@ from irc.model import (
 from irc.paths import REPO_ROOT, RUNS
 
 
-def load_concept_forms(path: Path) -> dict[str, re.Pattern]:
-    """-> {concept: compiled word-boundary alternation of its inflected forms}.
+def _pattern(forms: list[str]) -> re.Pattern:
+    """Word-boundary alternation, longest-first so `dusting` wins over `dust`.
 
-    Word boundaries, not substrings: `\\bbag(s)?\\b` must not fire on "baggage".
-    This is deliberately conservative -- it catches number inflection only, so
-    "snowing" is not scored as a leak of "snow". Undercounting leaks is the safer
-    error for a rate being reported, since a false leak would corrupt the
-    interpretation of a cell rather than merely soften it.
+    Boundaries, not substrings: the pattern for `bags` must not fire on
+    "baggage".
     """
-    pats = {}
+    alts = "|".join(re.escape(f) for f in sorted(forms, key=len, reverse=True))
+    return re.compile(rf"\b({alts})\b", re.IGNORECASE)
+
+
+def load_concept_forms(path: Path) -> tuple[dict[str, re.Pattern], dict[str, re.Pattern]]:
+    """-> (strict, loose) leak patterns per concept, from irc/concepts.csv.
+
+    strict  INFLECTIONAL forms only -- the pre-registered leak measure. Catches
+            dust/dusts/dusting/dusted, snow/snowed/snowing. Generated forms that
+            are not real words ("lightninged") cost nothing, since such strings
+            never occur in text.
+    loose   strict plus hand-pruned WordNet DERIVATIONAL forms (bloody, snowy,
+            rubberize, pacify). Reported as a sensitivity check, never as the
+            primary measure: WordNet relates lemmas by string, so polysemous
+            concepts import derivations from unrelated senses. The three worst
+            (Phones->phonetic, Deserts->desertion, Information->inform) are
+            dropped in gen_concepts_csv.py, but the tier stays looser than the
+            experiment's claim, which is why it is secondary.
+
+    Neither tier disambiguates sense: a completion using "dust" in an unrelated
+    sense still scores as a leak.
+    """
+    strict, loose = {}, {}
     for row in csv.DictReader(path.open()):
-        forms = row.get("forms") or row["concept"]
-        alts = "|".join(re.escape(f) for f in sorted(forms.split("|"), key=len, reverse=True))
-        pats[row["concept"]] = re.compile(rf"\b({alts})\b", re.IGNORECASE)
-    return pats
+        base = (row.get("forms") or row["concept"]).split("|")
+        strict[row["concept"]] = _pattern(base)
+        extra = [f for f in (row.get("forms_derived") or "").split("|") if f]
+        loose[row["concept"]] = _pattern(base + extra)
+    return strict, loose
 
 
 def detect_leaks(completion: str, patterns: dict[str, re.Pattern]) -> list[str]:
@@ -168,7 +191,8 @@ def teacher_force_one(model, tokenizer, prompt: str, target: str,
 
 
 def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
-        teacher_force: bool, patterns: dict[str, re.Pattern]) -> None:
+        teacher_force: bool, patterns: dict[str, re.Pattern],
+        patterns_loose: dict[str, re.Pattern] | None = None) -> None:
     acts_dir = run_dir / "acts"
     acts_dir.mkdir(parents=True, exist_ok=True)
     gen_path = run_dir / "generations.jsonl"
@@ -201,6 +225,8 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
                 "exact_match": res["exact_match"],
                 "n_resp_tokens": res["n_resp_tokens"],
                 "leaked_concepts": detect_leaks(res["completion"], patterns),
+                "leaked_concepts_loose": detect_leaks(res["completion"], patterns_loose)
+                                         if patterns_loose else None,
                 "surprisal": res["surprisal"],
                 "acts_file": f"acts/{key}.pt",
                 "capture_layers": layers,
@@ -256,8 +282,8 @@ def main() -> None:
             "stimuli": str(args.stimuli), "limit": args.limit,
         }) + "\n")
 
-    run(model, tokenizer, run_dir, jobs, layers, args.teacher_force,
-        load_concept_forms(REPO_ROOT / "irc" / "concepts.csv"))
+    strict, loose = load_concept_forms(REPO_ROOT / "irc" / "concepts.csv")
+    run(model, tokenizer, run_dir, jobs, layers, args.teacher_force, strict, loose)
 
 
 if __name__ == "__main__":

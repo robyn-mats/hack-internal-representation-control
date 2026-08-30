@@ -62,6 +62,7 @@ if __name__ == "__main__":
 import argparse
 import csv
 import json
+import math
 import re
 import subprocess
 import time
@@ -171,7 +172,8 @@ def generate_one(model, tokenizer, prompt: str, target: str,
 
     acts = _capture(model, out, n_prompt, n_prompt + n_resp, layers)
     return {"completion": completion, "exact_match": completion == target,
-            "n_resp_tokens": n_resp, "surprisal": None, "acts": acts}
+            "n_resp_tokens": n_resp, "surprisal": None, "eot_surprisal": None,
+            "eot_top_token": None, "eot_top_p": None, "acts": acts}
 
 
 def teacher_force_one(model, tokenizer, prompt: str, target: str,
@@ -179,16 +181,23 @@ def teacher_force_one(model, tokenizer, prompt: str, target: str,
     """Force `target` as the assistant turn; record surprisal of forced tokens."""
     ids = chat_ids(tokenizer, prompt)
     n_prompt = ids.shape[1]
-    tgt = torch.tensor(
-        [tokenizer(target, add_special_tokens=False)["input_ids"]],
-        device=ids.device)
-    full = torch.cat([ids, tgt], dim=1)
-    n_resp = tgt.shape[1]
+    tgt_ids = tokenizer(target, add_special_tokens=False)["input_ids"]
+    n_resp = len(tgt_ids)
+
+    # Score <end_of_turn> as well as the carrier tokens. Forcing the carrier is
+    # unsurprising for a model that was going to write it anyway -- N1 ("juggle
+    # X") reproduced the carrier correctly and only then appended a comment, so
+    # every forced token was near-zero surprisal while the actual deviation sat
+    # one token past the end. Reluctance to STOP is where deviation shows up
+    # under forcing, and it is invisible unless the stop token is scored.
+    eot_id = tokenizer.convert_tokens_to_ids("<end_of_turn>")
+    scored = torch.tensor([tgt_ids + [eot_id]], device=ids.device)
+    full = torch.cat([ids, scored], dim=1)
 
     with torch.no_grad():
         logits = model(full).logits
     # logits[t] predicts token t+1, so the forced token at n_prompt+i is scored
-    # by the distribution at n_prompt+i-1.
+    # by the distribution at n_prompt+i-1. The final row scores <end_of_turn>.
     # float64, not float32. Gemma copies the carrier with near-certainty when the
     # source is in context, so compliant trials saturate: in float32 any p above
     # ~0.99999988 reads as exactly log(p) = 0, and two conditions with genuinely
@@ -197,12 +206,19 @@ def teacher_force_one(model, tokenizer, prompt: str, target: str,
     # upstream, so differences far below ~1e-3 nats should not be trusted either
     # way -- see NOTES.md.
     logprobs = torch.log_softmax(
-        logits[0, n_prompt - 1 : n_prompt + n_resp - 1].double(), -1)
-    tok_lp = logprobs.gather(-1, tgt[0].unsqueeze(-1)).squeeze(-1)
+        logits[0, n_prompt - 1 : n_prompt + n_resp].double(), -1)
+    tok_lp = logprobs.gather(-1, scored[0].unsqueeze(-1)).squeeze(-1)
 
+    # What the model would rather have written than stopping.
+    top_lp, top_id = logprobs[-1].max(-1)
+
+    # Capture excludes the stop token, matching the generated pass exactly.
     acts = _capture(model, full, n_prompt, n_prompt + n_resp, layers)
     return {"completion": target, "exact_match": True, "n_resp_tokens": n_resp,
-            "surprisal": (-tok_lp).tolist(), "acts": acts}
+            "surprisal": (-tok_lp[:n_resp]).tolist(),
+            "eot_surprisal": float(-tok_lp[n_resp]),
+            "eot_top_token": tokenizer.decode([int(top_id)]),
+            "eot_top_p": float(top_lp.exp()), "acts": acts}
 
 
 def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
@@ -244,6 +260,9 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
                 "leaked_concepts_loose": detect_leaks(res["completion"], patterns_loose)
                                          if patterns_loose else None,
                 "surprisal": res["surprisal"],
+                "eot_surprisal": res["eot_surprisal"],
+                "eot_top_token": res["eot_top_token"],
+                "eot_top_p": res["eot_top_p"],
                 "acts_file": f"acts/{key}.pt",
                 "capture_layers": layers,
             }) + "\n")
@@ -264,8 +283,11 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
                     print(f"   LEAK:  {leaks}")
                 if res["surprisal"]:
                     sp = res["surprisal"]
-                    print(f"   surprisal: mean {sum(sp) / len(sp):.2f} "
-                          f"max {max(sp):.2f} nats over {len(sp)} tokens")
+                    print(f"   surprisal: mean {sum(sp) / len(sp):.4f} "
+                          f"max {max(sp):.4f} nats over {len(sp)} forced tokens")
+                    print(f"   stop:      {res['eot_surprisal']:.3f} nats, "
+                          f"P(stop)={math.exp(-res['eot_surprisal']):.4f}; "
+                          f"prefers {res['eot_top_token']!r} p={res['eot_top_p']:.3f}")
 
             if i % 100 == 0 or i == len(todo):
                 el = time.perf_counter() - t0

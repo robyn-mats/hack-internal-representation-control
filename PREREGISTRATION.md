@@ -75,9 +75,23 @@ activation measurements — its residual norm is ~20× other tokens and the SAEs
 were not trained on it.
 
 **Primary method is generation.** Teacher-forcing is a robustness check on the
-same prompts. Per-condition surprisal of the forced tokens is reported: flat
-surprisal means teacher-forcing is near-neutral, surprisal tracking condition
-means it is not and the forced comparison is confounded.
+same prompts. Two quantities are reported per condition:
+
+- **Forced-token surprisal** — mean over the carrier's own tokens.
+- **Stop surprisal** — the surprisal of `<end_of_turn>` immediately after the
+  forced carrier, i.e. how reluctant the model is to stop there, together with
+  the token it would rather have written.
+
+The second is the load-bearing one, and it is not a refinement. Forcing the
+carrier is unsurprising for any model that would have written it anyway: in the
+pilot smoke test N1 (`juggle X`) reproduced the carrier *correctly* and only then
+appended a comment, so all seven forced tokens scored near zero while the entire
+deviation sat one token past the end. Forced-token surprisal alone would have
+reported that trial as indistinguishable from a fully compliant one.
+
+Flat stop surprisal across conditions means teacher-forcing is near-neutral;
+stop surprisal tracking condition means it is not, and the forced comparison is
+confounded with reluctance to stop.
 
 **Compliance.** Exactness is recorded, not used as a filter. Two rates are
 reported per cell as first-class outcomes:

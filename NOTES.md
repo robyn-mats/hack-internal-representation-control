@@ -188,6 +188,53 @@ The teacher-forced pass must therefore sample the deviating cells (N, P, Q, R,
 T3, T4), not only the compliant ones. The 3-trial smoke test drew A1, A2 and B1,
 all compliant, which is why it looked uniformly and uninformatively flat.
 
+## 2026-08-30 — `exact_match` hid a trailing token that was diluting the readout
+
+**Finding: 11 of 67 compliant trials wrote 8 tokens, not 7. Activation capture
+was averaging a trailing newline into the dependent variable for those 11 and
+not for the other 53 — and which trials is condition-dependent.**
+
+Exactness is scored on `completion.strip() == target`, so a trial that writes
+the carrier and then a trailing `\n` is recorded as exact while having produced
+an extra token. `n_resp_tokens` counts everything up to `<end_of_turn>`, and
+capture used that span:
+
+| generated `n_resp` | teacher-forced `n_resp` | count |
+|---|---|---|
+| 7 | 7 | 53 |
+| **8** | 7 | **11** (all `exact_match=True`) |
+| 21–23 | 7 | 3 (the real deviations) |
+
+Two consequences, the first much worse than the second:
+
+1. **Condition-correlated dilution of the DV.** The pooling rule is "mean over
+   response tokens". For 11 trials that mean includes a semantically empty
+   newline's activation; for 53 it does not. The affected trials are a specific
+   subset (C1, C4, D1, D3, I4, J3, N3, S1, S2, S3, T7), so the dilution is not
+   noise — it varies with condition, which is the one thing a nuisance must not
+   do.
+2. **The two passes were not comparable.** Generated captured 8 vectors where
+   teacher-forced captured 7 for the same stimulus.
+
+Fix: capture exactly `min(n_resp, len(target_tokens))` positions in both passes,
+so every trial contributes the carrier's own tokens and nothing else. The full
+completion and `n_resp_tokens` are still recorded, with `n_capture_tokens`
+alongside.
+
+**Related: raw stop surprisal conflates formatting with deviation.** Those same
+11 trials showed elevated stop surprisal (0.4–3.4 nats) purely because Gemma
+habitually emits a trailing newline before `<end_of_turn>` — the top continuation
+was `'\n'`, not content. The three genuine deviations (T3 12.1, N1 5.5, T4 5.3)
+preferred `' '` and went on to write real text.
+
+`p_content_continue` separates them: probability mass on continuing with
+something that is neither the stop token nor whitespace. That is the quantity the
+neutrality check needs. 104 of the tokenizer's 262k tokens decode to pure
+whitespace and are excluded.
+
+**Both smoke runs predate the fix**, so their stored acts have mixed shapes.
+Scratch data; the pilot starts clean.
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

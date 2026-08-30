@@ -144,6 +144,22 @@ def load_stimuli(path: Path, split: str) -> list[dict]:
     return jobs
 
 
+_WHITESPACE_IDS: dict[int, list[int]] = {}
+
+
+def _whitespace_ids(tokenizer) -> list[int]:
+    """Token ids whose decoded form is pure whitespace, cached per tokenizer."""
+    out = []
+    for tid in range(len(tokenizer)):
+        try:
+            t = tokenizer.decode([tid])
+        except Exception:
+            continue
+        if t and t.strip() == "":
+            out.append(tid)
+    return out
+
+
 def _capture(model, out_ids, lo: int, hi: int, layers: list[int]) -> torch.Tensor:
     """One forward pass, activations for token positions [lo, hi).
 
@@ -170,10 +186,21 @@ def generate_one(model, tokenizer, prompt: str, target: str,
     n_resp = int(ends[0]) if len(ends) else len(gen)
     completion = tokenizer.decode(gen[:n_resp], skip_special_tokens=True).strip()
 
-    acts = _capture(model, out, n_prompt, n_prompt + n_resp, layers)
+    # Capture exactly the carrier's own token span, not everything up to
+    # <end_of_turn>. Gemma often appends a trailing "\n" that .strip() removes
+    # before the exactness check, so a trial can be exact_match=True and still
+    # have written 8 tokens rather than 7. Capturing all of them would average a
+    # semantically empty newline into the readout for some trials and not
+    # others -- and which trials is condition-dependent, so it is a
+    # condition-correlated dilution of the dependent variable. It would also
+    # give the two passes different shapes for the same stimulus.
+    n_cap = min(n_resp, tgt_len)
+    acts = _capture(model, out, n_prompt, n_prompt + n_cap, layers)
     return {"completion": completion, "exact_match": completion == target,
-            "n_resp_tokens": n_resp, "surprisal": None, "eot_surprisal": None,
-            "eot_top_token": None, "eot_top_p": None, "acts": acts}
+            "n_resp_tokens": n_resp, "n_capture_tokens": n_cap,
+            "surprisal": None, "eot_surprisal": None,
+            "eot_top_token": None, "eot_top_p": None,
+            "p_content_continue": None, "acts": acts}
 
 
 def teacher_force_one(model, tokenizer, prompt: str, target: str,
@@ -210,7 +237,19 @@ def teacher_force_one(model, tokenizer, prompt: str, target: str,
     tok_lp = logprobs.gather(-1, scored[0].unsqueeze(-1)).squeeze(-1)
 
     # What the model would rather have written than stopping.
-    top_lp, top_id = logprobs[-1].max(-1)
+    stop_row = logprobs[-1]
+    top_lp, top_id = stop_row.max(-1)
+
+    # Preferring whitespace before stopping is formatting, not deviation: Gemma
+    # habitually emits a trailing newline. p_content_continue is the mass on
+    # continuing with something that is neither the stop token nor whitespace --
+    # i.e. actually having more to say. That is the quantity the neutrality
+    # check needs; raw stop surprisal conflates it with the newline habit.
+    probs = stop_row.exp()
+    benign = float(probs[eot_id])
+    for tid in _WHITESPACE_IDS.setdefault(id(tokenizer), _whitespace_ids(tokenizer)):
+        benign += float(probs[tid])
+    p_content = max(0.0, 1.0 - benign)
 
     # Capture excludes the stop token, matching the generated pass exactly.
     acts = _capture(model, full, n_prompt, n_prompt + n_resp, layers)
@@ -218,7 +257,9 @@ def teacher_force_one(model, tokenizer, prompt: str, target: str,
             "surprisal": (-tok_lp[:n_resp]).tolist(),
             "eot_surprisal": float(-tok_lp[n_resp]),
             "eot_top_token": tokenizer.decode([int(top_id)]),
-            "eot_top_p": float(top_lp.exp()), "acts": acts}
+            "eot_top_p": float(top_lp.exp()),
+            "p_content_continue": p_content,
+            "n_capture_tokens": n_resp, "acts": acts}
 
 
 def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
@@ -256,6 +297,8 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
                 "completion": res["completion"],
                 "exact_match": res["exact_match"],
                 "n_resp_tokens": res["n_resp_tokens"],
+                "n_capture_tokens": res["n_capture_tokens"],
+                "p_content_continue": res["p_content_continue"],
                 "leaked_concepts": detect_leaks(res["completion"], patterns),
                 "leaked_concepts_loose": detect_leaks(res["completion"], patterns_loose)
                                          if patterns_loose else None,
@@ -285,9 +328,14 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
                     sp = res["surprisal"]
                     print(f"   surprisal: mean {sum(sp) / len(sp):.4f} "
                           f"max {max(sp):.4f} nats over {len(sp)} forced tokens")
-                    print(f"   stop:      {res['eot_surprisal']:.3f} nats, "
-                          f"P(stop)={math.exp(-res['eot_surprisal']):.4f}; "
-                          f"prefers {res['eot_top_token']!r} p={res['eot_top_p']:.3f}")
+                    pstop = math.exp(-res["eot_surprisal"])
+                    tok = res["eot_top_token"]
+                    pref = ("stop is the top choice" if tok == "<end_of_turn>"
+                            else f"prefers {tok!r} (p={res['eot_top_p']:.3f})")
+                    print(f"   stop:      P(stop)={pstop:.4f} "
+                          f"({res['eot_surprisal']:.3f} nats), {pref}")
+                    print(f"   continue:  P(content)={res['p_content_continue']:.4f}"
+                          f"   <- whitespace excluded; this is real continuation")
 
             if i % 100 == 0 or i == len(todo):
                 el = time.perf_counter() - t0

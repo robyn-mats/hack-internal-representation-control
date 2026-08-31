@@ -29,75 +29,64 @@ committed. Anything needing raw activations needs the volume remounted.
 | Scaffold | tagged form, amended 2026-08-31 — deviation 6.81% → 0.04% |
 | Stimuli | `stimuli.csv`, 23,450 rows / 23,107 prompts |
 | Readouts built | concept vectors (`word_tokens`) + 50 latent selections at 16k |
+| **Stage 2: pooling rule** | **`token_mean`** (rule 3 degenerate) — commit `61ab4f2` |
+| **Stage 2: analysis layer** | **40** — commit `b54ee96` |
 
-**Runs** (all in `artifacts/runs/`, all with `event: completed` records):
+**Runs** (all in `artifacts/runs/`):
 
-- `pilot2/generated` — 4,627 trials, 2 non-exact
-- `pilot2/teacher_forced` — 4,627 trials
-- `heldout1/generated` — 18,487 trials, 33 non-exact (0.18%; 0.055% excluding
-  the concept `information`, see `NOTES.md`)
-- `heldout1/teacher_forced` — the 33 deviant trials only
-- `pilot1/*` — **pre-amendment**, collected under the old scaffold. Not
-  confirmatory data. Keep: its deviation rates are the scaffold-dependence result.
+- `pilot2/generated` — 4,627 trials, 2 non-exact. **Measured.**
+- `pilot2/teacher_forced` — 4,627 trials. **Measured.**
+- `heldout1/generated` — 18,487 trials, 33 non-exact (0.18%). **Measured.**
+- `heldout1/teacher_forced` — the 33 deviant trials only. **Measured.**
+- `pilot1/*` — **pre-amendment**, old scaffold. Not confirmatory data.
 
-**Stage 2 so far:** pooling rule is **`token_mean`** (decided; rule 3 is
-degenerate for a copying task, `topk_mean` dropped for selecting on the measured
-quantity). **The analysis layer is still open** — it needs the pilot measured.
+## What the pilot established
+
+1. **The SAE readout has a severe floor effect.** 86–98% of readouts are exactly
+   `0.0` depending on layer; 92% at layer 40, the best. A positive control
+   (`rk_scripts/12_latent_positive_control.py`) shows this is **not** an
+   instrument failure — zero SELECTION_DEAD at every layer, latents firing at
+   3,000–16,000 in the context they were selected from. So the zeros are real:
+   instructing the model to focus on a concept while it copies an unrelated
+   sentence largely does not activate that concept's latents.
+2. **The concept vector is far more sensitive** — pilot A-vs-T7 dz 2.29 at layer
+   40 against the SAE's 0.71, with no zero problem. It is registered as
+   *secondary*; decide how to report that before running the contrasts.
+3. **Q0 holds at layers 16, 31 and 40; it fails at 53.** Layer 16 passes only
+   trivially (A 1.75, T1 1.72, T7 1.57).
+4. **Latent selection is ragged.** k=5 is a ceiling: 92 of 200 (concept, layer)
+   cells have k<5 and 9 have k=0. Held-out usable n by layer: 40 / 37 / 37 / 38.
+   At layer 40 the confirmatory n is **37, not 40** (detectable dz ~0.62).
+5. **Teacher forcing is not neutral** on the deviant subset — `p_stop_soon`
+   spans 0.016 to 0.9995 across cells. Note `surprisal` is stored as a
+   **per-token list**, so it must be pooled before any per-cell summary.
 
 ## Next steps, in order
 
-**1. On the pod, before releasing it — CPU, ~20 min.** The only step that must
-happen while the volume is mounted:
+1. **Write the confirmatory analysis.** Does not exist. 15 contrasts, BCa
+   bootstrap, Holm across the family, Q0 as a hard gate first. CPU only.
+   Layer 40, `token_mean`, `latent_sum` primary; all trials, compliant-only as
+   the robustness check.
+2. **Deviation and leak rates per cell** — first-class outcomes in this fork,
+   not exclusion criteria.
+3. **Teacher-forcing robustness check**, pooling the per-token surprisal.
+4. **262k SAEs** — pre-registered for the confirmatory run, needs a GPU pod:
+   ~22 GB of weights, re-run `select_latents`, re-run `measure`. Note the
+   analysis layer was chosen at 16k and would be applied at 262k. Given finding
+   1, decide whether 262k is expected to fix the floor effect before paying for
+   it.
 
-    python3 rk_scripts/09_measure.py --run-id pilot2 --pass generated --device cpu
+## Mac / CPU-only work
 
-Then **commit `artifacts/runs/pilot2/generated/results/*.parquet`** — they are
-small and are what makes everything below portable. (`artifacts/` is gitignored,
-so add them with `git add -f`.)
-
-**2. Off-pod — write the Stage 2 chooser.** Does not exist yet. Reads the
-parquet, computes A-vs-T7 separation per layer at `token_mean`, prints the four
-layers, names the winner. ~50 lines. That is the last Stage 2 value.
-
-**3. Commit the Stage 2 amendment** naming the analysis layer. Until this is
-committed, held-out data must not be measured — that is the standing commitment
-and the reason held-out generation was allowed to run early.
-
-**4. Needs the volume again.** Held-out measurement:
-   - 262k latent selection at the chosen layer (**GPU**, ~1 h, 11.3 GB download).
-     Change `SAE_ID_TEMPLATE` in `irc/constants.py` to `width_262k` at that point,
-     not before — the pilot's selection must stay reproducible.
-   - held-out measure (**CPU**), then commit its parquet.
-   - The held-out **concept-vector** readout needs no SAE, so the secondary
-     readout is available without the 262k step.
-
-**5. Off-pod — the confirmatory analysis.** Does not exist. 15 contrasts, average
-over carriers then phrasings within cell, paired across the 40 concepts, BCa
-bootstrap at 10,000 resamples, Holm across the family, **Q0 as a hard gate**. Plus
-per-cell deviation/leak rates and the dilution diagnostics in `PLAN.md` §4.
-
-## Working on a Mac rather than the pod
-
-`POD_NOTES.md` rules do **not** apply — that file is pod-specific. On a laptop
-`uv` is correct, as `CLAUDE.md` says. No GPU means: measure stages run with
-`--device cpu`, and anything needing the 27B model or SAE *selection* needs the
-pod back. SAE *encoding* is a small matmul and runs fine on CPU.
+Everything in steps 1–3. The parquets under
+`artifacts/runs/*/*/results/*.parquet` are a few MB and are committed with
+`git add -f` (artifacts/ is gitignored). Raw activations do **not** travel and
+need the volume remounted.
 
 ## Two process rules learned the hard way
 
-- **Never edit a shell script while it is running.** Bash reads scripts by byte
-  offset; rewriting one mid-run made it re-execute its launch line and start a
-  redundant 18,487-trial run. See the `queue_heldout.sh` incident in the log.
-- **Per-trial cost estimates do not transfer between stages.** Rule 3 was
-  estimated at 2.2 h from the teacher-forced pass's 2.08 s/trial and ran in 7
-  minutes at 0.09 s/trial. Measure before budgeting.
-
-## Open questions for the writeup
-
-- `information` is meta-linguistic and behaves differently — away-instructions
-  land on the carrier text and delete words. 23 of 33 held-out deviations.
-  Reported, **not excluded** (`NOTES.md`).
-- The analysis layer is chosen at 16k and applied at 262k. Flat-vs-peaked layer
-  curve determines how load-bearing that is.
-- `pilot1` vs `pilot2` is a real scaffold-dependence result: identical
-  instructions, 6.81% vs 0.04% deviation.
+- **Never edit a running bash script.** Bash reads by byte offset, so an edit
+  mid-run resumes at a shifted position and can re-execute a line. This cost a
+  redundant 18,487-trial run. Python is safe (compiled up front).
+- **`pkill -f <pattern>` matches your own shell.** It has self-terminated a
+  command mid-sequence twice. Enumerate PIDs, skip `$$`, then kill.

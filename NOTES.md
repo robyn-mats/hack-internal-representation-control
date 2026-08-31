@@ -900,6 +900,122 @@ on ragged input, so bug 1 was going to surface — but `sum` over an empty
 selection returns a clean `0.0`, and nothing anywhere would have flagged that
 nine cells of the primary readout were fabricated zeros.
 
+## 2026-08-31 — The zeros are real: a positive control on the SAE readout
+
+The pilot readout is exactly `0.0` for a lot of (concept, layer) cells — 86% to
+98% of all readouts depending on layer — including in cell A, the strongest
+instruction to think about the concept. That number is uninterpretable on its
+own, because it is ambiguous between two opposite things:
+
+- **instrument insensitivity** — the model represents the concept fine, but the
+  five latents we selected do not detect it here, so `0.0` is a
+  non-measurement and must not be read as "concept not activated";
+- **a genuine null** — the latents are valid detectors and the concept really is
+  not activated while the model copies an unrelated carrier sentence.
+
+Nothing in the experiment distinguishes them. `rk_scripts/12_latent_positive_control.py`
+does: it measures the same latents in the context they were **selected** in —
+the four `WORD_TEMPLATES_V1` prompts, at the concept's own token positions. If a
+latent will not fire there, it will not fire anywhere.
+
+### Result: zero SELECTION_DEAD at every layer
+
+Every selected latent fires in the selection context, and fires hard:
+
+| concept | control L40 | task L40 | control L53 | task L53 |
+|---|---|---|---|---|
+| silver | 9649 | 496 | **9965** | **0.0** |
+| kaleidoscopes | 4081 | 247 | 3116 | **0.0** |
+| rubber | 6270 | 162 | 3149 | **0.0** |
+| trumpets | 11330 | 122 | 16028 | 1331 |
+| secrecy | 8223 | 1139 | 6209 | 999 |
+| vegetables | 0 (k=0) | — | 4149 | **0.0** |
+
+`Silver`'s latents fire at ~10,000 on "Tell me about silver" and at exactly
+`0.0` in every one of the 25 experimental conditions at layer 53.
+
+**So the zeros are measurements, and the 92%-zero rate at the best layer is a
+finding about the task, not a broken instrument.** Instructing the model to
+focus on a concept while it copies an unrelated sentence largely fails to
+activate that concept's SAE latents. That is a substantive result and it bears
+directly on the fork's question — but it also means the readout has a severe
+floor effect, which is a power problem rather than a validity problem.
+
+Layer 40 is the exception: it is the only layer whose readout is informative for
+every concept it can measure (9 of 9, against 6 of 10 at layers 31 and 53 and
+3 of 10 at layer 16).
+
+### Corollary: the coverage refinement was a no-op
+
+Because nothing is SELECTION_DEAD, tightening the definition of "usable" from
+`k>0` to "actually fires" changes no held-out count: 40 / 37 / 37 / 38 either
+way. The worry that a concept might have three selected latents that never fire
+was well-formed and simply false here.
+
+---
+
+## 2026-08-31 — A common-concept restriction that did the opposite of its purpose
+
+Worth recording as a methodological trap, because it was introduced *to protect*
+the comparison and silently inverted it.
+
+The SAE selection is ragged, so layers cover different concept sets. The obvious
+worry: an unrestricted per-layer dz would let a layer rank high partly by having
+dropped its hardest concepts. The obvious fix: restrict the comparison to the
+concepts paired at **every** layer. That was committed the same morning.
+
+It is wrong, and by exactly the mechanism it was meant to prevent.
+
+The common set excludes any concept that **any** layer cannot measure.
+`Vegetables` has `k=0` at layer 40 — no instrument. But at layers 16, 31 and 53
+it *is* measurable and reads `0.0 / 0.0 / 0.0` across A, T1 and T7. So the
+restriction lets those layers **shed a concept they measure and get no signal
+from**, while layer 40 — which never had it — gains nothing:
+
+| layer | dz, own concepts | dz, common set |
+|---|---|---|
+| 16 | 0.483 (n=10) | 0.513 (n=9) |
+| 31 | 0.581 (n=10) | 0.621 (n=9) |
+| **40** | **0.711 (n=9)** | 0.711 (n=9) |
+| 53 | 0.662 (n=10) | **0.713 (n=9)** |
+
+Every layer's dz rises except layer 40's, which cannot rise because the concept
+was already absent. **The argmax flips from 40 to 53.** The restriction
+systematically rewards degenerate layers.
+
+The correct accounting distinguishes two kinds of nothing:
+
+- **measurable but silent** → **data**. Δ = 0, keep the concept.
+- **no instrument (k=0)** → **missing**. Drop the concept.
+
+That is what the rule did before the "fix", and it is the literal reading of the
+pre-registration.
+
+### The layer choice, and the honest sequence
+
+Under the literal rule layer 40 wins (0.711 vs 0.662). Layer 40 also passes the
+pilot Q0 ordering cleanly (A 173.1 > T1 24.7 > T7 1.8) while **layer 53 fails
+it** (A 157.0, T1 157.3 — inverted). Since Q0 is already a hard gate in
+`PREREGISTRATION.md`, passing it on the pilot is now an **eligibility
+precondition** applied before the dz criterion, rather than coverage acting as a
+general tiebreak: a layer the pilot shows failing Q0 cannot support Q1–Q10 at
+all, so selecting it would guarantee no confirmatory analysis.
+
+Layers 16 and 31 also pass Q0, so 53 is the only failure — and it was the one
+the superseded rule selected, by 0.003.
+
+**Sequence, stated because it matters:** pilot dz was computed *before* this
+revision. The defect was found after seeing that the superseded rule picked 53.
+What makes reverting it something other than fishing is that the defect is
+mechanical and demonstrable — three of four layers' dz rose, and the one that
+could not rise is the one that lost — rather than a preference about the answer.
+Both dz tables are printed by `rk_scripts/11_stage2_choose.py` and stored in
+`stage2_values.json`, and the amendment records all of it.
+
+Layer 16 is a reminder to read the means and not just the test: it "passes" Q0
+with A 1.75, T1 1.72, T7 1.57 — an ordering that holds on numbers too small to
+mean anything, with 3 of 10 concepts informative.
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

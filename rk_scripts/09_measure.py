@@ -170,6 +170,93 @@ def measure_vectors(run_dir: Path, stimuli: dict, records: dict,
     return rows
 
 
+def load_selected_latents(version: str = "v2") -> dict[str, dict[int, list[int]]]:
+    """-> {concept_lower: {layer: [latent indices]}} from artifacts/latents_{version}.
+
+    Files are keyed by the capitalized word as stored in irc/words_paper.py;
+    stimuli carry the lowercased form, so the map is lowercased here.
+    """
+    from irc.paths import ARTIFACTS
+    from irc.words_paper import CONCEPT_WORDS_PAPER
+
+    out, missing = {}, []
+    for word in CONCEPT_WORDS_PAPER:
+        path = ARTIFACTS / f"latents_{version}" / f"{word}.json"
+        if not path.exists():
+            missing.append(word)
+            continue
+        d = json.loads(path.read_text())
+        out[word.lower()] = {int(l): [e["latent"] for e in ents]
+                             for l, ents in d["layers"].items()}
+    if missing:
+        raise SystemExit(f"no latent selection for {len(missing)} concepts: "
+                         f"{missing[:5]}... run scripts/run_pipeline.py "
+                         f"--stages latents")
+    return out
+
+
+def measure_sae(run_dir: Path, stimuli: dict, records: dict, plaus: dict,
+                latents_version: str = "v2", device: str = "cuda",
+                limit: int = 0) -> list[dict]:
+    """SAE latent activation per trial -- the PRIMARY readout (PLAN.md section 4).
+
+    Two ways of collapsing the 5 selected latents at a layer, both recorded:
+
+      latent_sum   per-token total across the concept's latents. The natural
+                   "how much of this concept is active" quantity, and what
+                   upstream reports as act_sum_mean.
+      latent_max   per-token strongest single latent. Less diluted if only one
+                   of the five is the real concept latent -- which the selection
+                   cannot guarantee, since it ranks contrastively rather than
+                   verifying meaning.
+
+    Both are then pooled over tokens by the same rules as the vector readout.
+    """
+    from irc.pipeline import load_saes
+
+    saes = load_saes(list(SAE_LAYERS), device)
+    sel = load_selected_latents(latents_version)
+
+    rows, n, skipped = [], 0, 0
+    for pg, rec in records.items():
+        st = stimuli.get(pg)
+        if st is None or not rec.get("acts_file"):
+            continue
+        concept = st["concept"]
+        if concept not in sel:          # T7 names no concept
+            skipped += 1
+            continue
+        A = torch.load(run_dir / rec["acts_file"]).to(device)
+        w = plaus.get(pg)
+        w = torch.tensor(w, device=device) if w is not None else None
+        for li, layer in enumerate(SAE_LAYERS):
+            sae = saes[layer]
+            feats = sae.encode(A[li].to(sae.dtype))            # (T, d_sae)
+            idx = sel[concept][layer]
+            chosen = feats[:, idx].float()                     # (T, k)
+            for name, per_token in (("latent_sum", chosen.sum(-1)),
+                                    ("latent_max", chosen.max(-1).values)):
+                for rule, val in pool(per_token, w).items():
+                    rows.append({
+                        "prompt_group": pg, "readout": name,
+                        "layer": layer, "pooling": rule, "value": val,
+                        "n_latents": len(idx),
+                        "concept": concept, "cell_id": st["cell_id"],
+                        "phrasing_id": st["phrasing_id"], "split": st["split"],
+                        "direction": st["direction"], "frame_type": st["frame_type"],
+                        "negation": st["negation"], "carrier_order": st["carrier_order"],
+                        "exact_match": rec["exact_match"],
+                        "n_resp_tokens": rec["n_resp_tokens"],
+                    })
+        n += 1
+        if limit and n >= limit:
+            break
+        if n % 500 == 0:
+            print(f"  [sae] {n} trials")
+    print(f"  [sae] {n} trials measured, {skipped} concept-free skipped")
+    return rows
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run-id", required=True)
@@ -179,6 +266,9 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--stimuli", type=Path, default=REPO_ROOT / "stimuli.csv")
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--readout", default="both",
+                    choices=["concept_vector", "sae", "both"])
+    ap.add_argument("--latents-version", default="v2")
     args = ap.parse_args()
 
     run_dir = RUNS / args.run_id / args.pass_
@@ -201,14 +291,27 @@ def main() -> None:
           f"their stored leaked_concepts")
 
     plaus = load_plausibility(run_dir)
-    rows = measure_vectors(run_dir, stimuli, records, plaus, args.variant,
-                           args.device, args.limit)
     out_dir = run_dir / "results"
     out_dir.mkdir(parents=True, exist_ok=True)
     import pandas as pd
+
+    if args.readout in ("concept_vector", "both"):
+        rows = measure_vectors(run_dir, stimuli, records, plaus, args.variant,
+                               args.device, args.limit)
+        path = out_dir / f"readout_concept_vector_{args.variant}.parquet"
+        pd.DataFrame(rows).to_parquet(path, index=False)
+        print(f"wrote {path} ({len(rows):,} rows)")
+
+    if args.readout in ("sae", "both"):
+        rows_sae = measure_sae(run_dir, stimuli, records, plaus,
+                               args.latents_version, args.device, args.limit)
+        path = out_dir / f"readout_sae_{args.latents_version}.parquet"
+        pd.DataFrame(rows_sae).to_parquet(path, index=False)
+        print(f"wrote {path} ({len(rows_sae):,} rows)")
+        rows = rows if args.readout == "both" else rows_sae
+
     df = pd.DataFrame(rows)
     path = out_dir / f"readout_concept_vector_{args.variant}.parquet"
-    df.to_parquet(path, index=False)
     print(f"\nwrote {path}  ({len(df):,} rows, "
           f"{df.prompt_group.nunique():,} trials x {len(SAE_LAYERS)} layers x "
           f"{df.pooling.nunique()} poolings)")

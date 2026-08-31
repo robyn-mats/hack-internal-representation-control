@@ -32,5 +32,14 @@ while nvidia-smi --query-compute-apps=pid --format=csv,noheader | grep -q . \
 done
 
 echo "==> starting held-out generation $(date '+%F %T %Z')"
-python3 rk_scripts/03_run_generation.py --run-id heldout1 --split held_out
-echo "==> queue_heldout done $(date '+%F %T %Z')"
+# exec, so bash is REPLACED by python rather than waiting on it as a child.
+# Without it, tmux names the window after this script's bash -- the pane reads
+# "bash" while an 11-hour run is in flight, which looks like nothing running.
+# tmux's automatic-rename follows the pane's foreground process group leader,
+# and a grandchild process is invisible to it.
+#
+# Note this is the opposite of /workspace/setup.sh, where exec was the bug: that
+# file is SOURCED, so exec replaced the login shell and dropped the ssh session.
+# This one is executed in its own process, so exec is correct. Nothing after it
+# runs, which is why the trailing "done" line is gone.
+exec python3 rk_scripts/03_run_generation.py --run-id heldout1 --split held_out

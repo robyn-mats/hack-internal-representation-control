@@ -563,6 +563,37 @@ carrier` — every trial of a given carrier now contributes the same number of
 activation vectors (7, 9, 10 or 11 by carrier length).
 
 
+## 2026-08-31 — The analysis layer is chosen at one SAE width and applied at another
+
+`PREREGISTRATION.md` fixes the pilot at 16k and the confirmatory run at 262k, and
+separately fixes the analysis layer as whichever of 16/31/40/53 maximizes A-vs-T7
+separation **on the pilot**. Those two commitments interact in a way neither
+states: **the layer is selected using 16k separation and then applied to held-out
+data measured with 262k SAEs.**
+
+That assumes the best layer at 16k is also the best layer at 262k. Probably safe
+— A-vs-T7 separation is a coarse property of where in the network a concept is
+legible, and it should not flip between two decompositions of the same residual
+stream. But it is an assumption, not a derivation, and the pilot cannot check it
+because the pilot never sees 262k.
+
+Worth a line in the writeup rather than passing unremarked. Cheap ways to firm it
+up, if GPU time allows later:
+
+- re-run the pilot's SAE readout at 262k for the chosen layer plus its nearest
+  rival, and confirm the ordering holds (needs 262k selection at two layers
+  rather than one, so ~2x that download);
+- or report the full layer curve at 16k alongside the held-out result, so a
+  reader can see how flat or peaked the choice was — a flat curve makes the
+  assumption nearly free, a sharply peaked one makes it load-bearing.
+
+Related sequencing, recorded because it is easy to get wrong: the SAE **readout**
+(encoding stored activations) is a small matmul and runs fine on CPU. The SAE
+**latent selection** needs the GPU, because it runs template prompts through the
+model. So held-out measurement is not GPU-bound; only the 262k selection that
+precedes it is.
+
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

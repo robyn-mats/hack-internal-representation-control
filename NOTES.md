@@ -652,6 +652,84 @@ not). A completion that is a strict subsequence of its target is the signature
 worth grepping for, in both runs.
 
 
+## 2026-08-31 — What the readouts and pooling actually do, and why rule 3 is degenerate
+
+Recorded partly as plain-language reference, because the pipeline has enough
+stages that the *purpose* of each is easy to lose, and partly because writing it
+out is what exposed that one pre-registered choice cannot work here.
+
+### What is stored, and what the measure stage does with it
+
+For every trial, the run saved the model's internal state while it wrote the
+carrier: at 4 layers, for each of the ~7-11 tokens produced, 5,376 numbers.
+Nothing in that says "satellites" — individual dimensions are not interpretable,
+because concepts are smeared across many at once.
+
+The measure stage translates, two independent ways:
+
+- **Concept vectors** (secondary readout). A single "satellites direction" in
+  5,376-dimensional space, built by averaging the model's state when reading the
+  word in the four `WORD_TEMPLATES_V1` sentences and subtracting a baseline. Per
+  token, take the angle between the model's actual state and that arrow.
+- **SAE latents** (primary readout). The sparse autoencoder re-expresses the
+  5,376 numbers as which of 16,384 named features are firing. The 5 most
+  concept-selective are pre-picked per concept — Satellites layer 16 latent
+  16085 is labelled "GPS and satellites" — and the measure asks how hard those
+  fired.
+
+Either gives one number per (trial, layer, token).
+
+### Why pooling exists
+
+Contrasts need one number per **trial**. The concept is unlikely to be equally
+active across all seven tokens of `The train arrived precisely on schedule.`, so
+if it spikes at one position and is absent at six, a flat average dilutes it
+toward nothing. Three rules were pre-registered; the collapse rule is the choice.
+
+### Rule 3 is degenerate for a copying task
+
+Rule 3 reads the concept out where it could plausibly have surfaced, weighting
+each position by P(the concept's first token | prefix). Measured across the whole
+pilot:
+
+| | |
+|---|---|
+| median P(concept next) | **6.3e-23** |
+| 99.9th percentile | 1.0e-08 |
+| **highest of 42,965 positions** | **2.9e-06** |
+| within-trial max/min weight ratio | **7e+16** |
+| positions with P > 1e-4 | **0** |
+
+The model is copying a fixed sentence under an explicit "output that sentence
+alone" instruction and complies on 99.96% of trials, so the probability of
+emitting the concept next is essentially zero **by construction, at every
+position**. The weights span sixteen orders of magnitude within a single trial,
+all vanishing — so the "weighted mean" is not weighting anything. It selects
+whichever position happened to have the least-astronomically-small value, and at
+1e-23 those differences are softmax far-tail numerics, not signal.
+
+**The rule assumed a task in which the concept might plausibly appear. This
+design forbids it.** That is a property of the design, not of the model or the
+data.
+
+### Consequences
+
+- **Pooling is `token_mean`** — the only non-degenerate eligible rule, `topk_mean`
+  having been dropped earlier for selecting on the quantity being measured.
+- **Held-out rule 3 is unnecessary**, saving ~28 min of GPU.
+- Rule 3's per-trial cost, for the record, was **0.09 s/trial** — 4,627 trials in
+  7 minutes against a 2.2 h estimate. The estimate came from the teacher-forced
+  pass at 2.08 s/trial, which also captured activations, ran three whitespace
+  lookaheads, and wrote 300 KB per trial. Rule 3 does one forward pass and
+  appends to a dict. Worth remembering that per-trial estimates transfer badly
+  between stages that look similar.
+
+This is the pilot working as designed: a pre-registered option eliminated on
+principled grounds, **before any effect size was computed and without touching
+held-out data**. A stronger position than "token_mean won a comparison" — the
+claim is that `plausible` is undefined for a copying task.
+
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

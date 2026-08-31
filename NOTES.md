@@ -35,6 +35,33 @@ does not put the target concept in the readout. Since the context does not evoke
 the concept, "X is irrelevant to this task" is *true* when they assert it, so
 there is no false-statement confound in their design either.
 
+**Gurnee do use the declarative.** Their `ignore` condition's canonical phrasing
+is `X is irrelevant to this task` — stated that way both in the main text and in
+the phrasing appendix. Section 3.2's body writes it as "ignore X", which is
+shorthand for the condition rather than the template; the appendix is
+unambiguous. So the fork's family L is the same *form* as their headline
+condition, which is what makes the comparison meaningful at all.
+
+**But their stimuli are different and, as far as we can tell, unpublished.** The
+paper gives illustrative examples only — a carrier sentence about a crooked
+painting, with *citrus fruits*, `3² − 2`, or a line width as the target — across
+three task families. Not published, and not locatable from the page:
+
+- the carrier sentences and target concepts actually used across the many trials;
+- the five to eight phrasing templates per condition (they sit behind hover
+  tooltips absent from the page source);
+- even the trial count for Figure 10 — other figures state theirs (n=100, n=90,
+  n=24, n=8), that one does not.
+
+There is no supplementary-data, release, or repository link anywhere in the page.
+
+Two consequences worth carrying into the writeup. **Their contamination claim
+cannot be independently checked** — the ~0 baseline is good evidence, but it is
+their measurement of stimuli nobody else can inspect. And **phrasings cannot be
+aligned**: this fork's 67 phrasings were written from the paper's canonical forms,
+so overlap with their actual templates is unknown, and any per-phrasing
+comparison to their spread is approximate.
+
 **The exposure is created by the recombination.** This fork puts Gurnee's
 relevance declaratives onto Lindsey's carriers, and those carriers overlap the
 concept list because nothing ever required them not to. Neither source paper was

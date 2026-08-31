@@ -162,13 +162,40 @@ While you write it: {frame}.
 - Concept vectors: use the `word_tokens` variant. The paper's extraction
   positions fail sanity checks on Gemma.
 
-## Open question inherited from upstream
+## Resolved: the 16k SAE pin is unnecessary (verified 2026-08-31)
 
-Upstream pins the SAE to 16k because that is *"the only variant Neuronpedia
-indexed for this model."* The SAELens registry (`pretrained_saes.yaml`) lists
-`neuronpedia:` entries for 16k, 65k, 262k **and** 1m at `l0_medium`. Verify
-against Neuronpedia before accepting the 16k constraint — if 262k is indexed,
-it is the better width for feature analysis and the pin can be relaxed.
+Upstream pinned the SAE to 16k because that was *"the only variant Neuronpedia
+indexed for this model."* **That is not true for gemma-3-27b-it.** Probing the
+Neuronpedia API directly at each of `SAE_LAYERS` (16 / 31 / 40 / 53), asking for
+an explanation at a fixed latent index:
+
+| width | 16 | 31 | 40 | 53 |
+|---|---|---|---|---|
+| 16k | — | ✓ | ✓ | — |
+| 65k | — | — | ✓ | ✓ |
+| **262k** | **✓** | **✓** | **✓** | **✓** |
+| 1m | 404 | 404 | 404 | 404 |
+
+262k is the only width that returns an explanation at every layer we measure, and
+index 200000 resolves for it while 404-ing for 16k, so the full latent range is
+served. **1m is a registry over-claim** — `pretrained_saes.yaml` lists a
+`neuronpedia:` id for it and the API 404s everywhere, which is why the registry
+alone is not evidence.
+
+Why width matters: 262,144 latents against 16,384 decomposes more finely, so a
+clean `satellites` latent is likelier than a broad "objects in space" one that
+also fires on Constellations and Dirigibles — and the whole design turns on
+separating a target concept from 49 others. It also eases the feature-slot
+competition `PLAN.md` §4 flags: at L0 ≈ 60 roughly sixty latents fire by
+construction, so a concept can lose a slot rather than be suppressed.
+
+Cost: ~16x the latents to select from, larger weights to download and hold, and
+`select_latents` scales with width.
+
+Per `PREREGISTRATION.md`, the pilot stays at 16k and the confirmatory run uses
+262k, which was pre-registered as conditional on exactly this verification.
+`irc/constants.py` still pins 16k; change it when the held-out run is configured,
+not before, so the pilot's latent selection stays reproducible.
 
 ## Hard rules
 

@@ -410,8 +410,13 @@ was **worse than the incumbent** — it broke T1 from 0% to 100% by echoing mark
 — so the result belongs to this specific wording, not to delimiters in general.
 
 **SAE width.****SAE width.** 16k for the pilot. 262k for the confirmatory run *if and only if*
-its Neuronpedia index is confirmed available (see `CLAUDE.md`); otherwise 16k
-throughout. Decided before the held-out run, recorded below.
+its Neuronpedia index is confirmed available; otherwise 16k throughout.
+
+**Condition met, verified 2026-08-31.** Probing the Neuronpedia API at each of
+`SAE_LAYERS`, 262k is the only width returning an explanation at all four
+(16k and 65k both have gaps; 1m 404s at every layer despite a registry entry).
+The confirmatory run therefore uses **262k**; the pilot stays at 16k as written.
+Evidence in `CLAUDE.md`.
 
 ---
 

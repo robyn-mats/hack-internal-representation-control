@@ -453,6 +453,74 @@ T3/T4/T5 keep their `PLAN.md` templates, so the filler work stands as a
 documented dead end rather than a change.
 
 
+## 2026-08-31 — The scaffold amendment, validated at full scale
+
+`pilot2` re-ran the whole pilot under the tagged scaffold: 4,627 trials, 2.70 h,
+**2 non-exact**. Against `pilot1`'s 315 under the plain scaffold, on identical
+stimuli and concepts.
+
+| | pilot1 (plain) | pilot2 (tagged) |
+|---|---|---|
+| deviation | 315/4,627 = **6.81%** | 2/4,627 = **0.04%** |
+| leak | 262/4,627 = **5.66%** | 1/4,627 = **0.02%** |
+| T4 | 91.4% | **0.0%** |
+| T3 | 90.0% | **1.4%** |
+| C | 22.1% | **0.0%** |
+| N | 14.0% | **0.0%** |
+
+Every other cell is at exactly 0.0%. The 524-trial `scaffold2` comparison
+predicted this and understated it.
+
+**The two survivors are different failure modes.**
+
+`T3` (`. . . . . vegetables`, carrier 2) is the known residual — appending the
+filler line. It is the *same trial* that failed under tag4 in `scaffold2`, same
+concept and carrier, so it is reproducible rather than random.
+
+`J3` (`de-emphasize satellites`, carrier 3) is new and is an **omission**:
+
+    target: 'The chef garnished the plate with fresh herbs.'
+    got:    'The chef garnished the plate with herbs.'
+
+Every failure chased so far has been *addition* — commentary, echoed
+instructions, markup. This dropped a word. It registers as a deviation and
+produces no leak. Whether `de-emphasize` causing an adjective to vanish means
+anything is not answerable at n=1, but it is worth grepping the held-out run for
+completions that are a strict subsequence of their target.
+
+---
+
+## 2026-08-31 — The trailing-token trim was preventing a confound, not noise
+
+The capture-alignment fix trims tokens beyond the carrier's own span. At pilot
+scale it fired on **383 of 4,627 trials (8.3%)**, and the distribution is what
+matters:
+
+| cell | trials with a trailing token trimmed |
+|---|---|
+| T3 | 67.1% |
+| T4 | 50.0% |
+| **A** (`concentrate on X`) | **45.7%** |
+| J | 16.8% |
+| M, S, L | ~1% |
+| H, T2, T5, T7 | **0%** |
+
+A 45-point spread across conditions. Without the fix, cell A would have carried
+an extra semantically-empty newline's activation in its mean on 46% of trials
+while H, T2, T5 and T7 carried it on none.
+
+**A is the focus condition and `A > T1 > T7` is Q0's hard gate** — the contrast
+that blocks every other one if it fails. A dilution hitting A on 46% of trials
+and T7 on 0% pushes directly against the ordering the gate exists to test. That
+is the difference between a nuisance and a confound, and it landed exactly where
+it would have done most damage.
+
+The smoke test showed 11 of 67 with no visible structure. At 4,627 the structure
+is unmistakable. Verified at scale: `capture count is constant within each
+carrier` — every trial of a given carrier now contributes the same number of
+activation vectors (7, 9, 10 or 11 by carrier length).
+
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

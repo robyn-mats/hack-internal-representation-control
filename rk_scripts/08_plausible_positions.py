@@ -8,7 +8,7 @@ model-free measure stage.
 
 For each trial, re-run the prompt plus its response through the model once and
 record, at every response position, P(the concept's first token | everything so
-far). Those become weights: `pool()` in 08_measure.py takes a weighted mean, so
+far). Those become weights: `pool()` in 09_measure.py takes a weighted mean, so
 the readout is taken where the concept could actually have surfaced rather than
 uniformly across tokens the concept had no chance of appearing at.
 
@@ -20,13 +20,13 @@ measured; this one selects by an independent quantity, which is the whole point.
 
 Concept-free conditions (T7) have no first token to score and are skipped.
 
-    python3 rk_scripts/09_plausible_positions.py --run-id pilot2 --pass generated
+    python3 rk_scripts/08_plausible_positions.py --run-id pilot2 --pass generated
 """
 
 from irc import env  # noqa: F401  -- must be the first import
 
 if __name__ == "__main__":
-    print("==> 09_plausible_positions: importing torch/transformers (~60s)...",
+    print("==> 08_plausible_positions: importing torch/transformers (~60s)...",
           flush=True)
 
 import argparse
@@ -130,7 +130,7 @@ def main() -> None:
     print(f"\nwrote {out_path}  ({len(done):,} trials)")
     print(f"  P(concept next): median {sorted(vals)[len(vals) // 2]:.2e}, "
           f"max {max(vals):.3f}")
-    print("  08_measure.py picks this up automatically as pooling 'plausible'")
+    print("  09_measure.py picks this up automatically as pooling 'plausible'")
 
 
 if __name__ == "__main__":

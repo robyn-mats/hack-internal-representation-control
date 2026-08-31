@@ -379,7 +379,7 @@ Two candidates remain eligible:
 
 - **`token_mean`** — mean over the captured response tokens.
 - **`plausible`** — weighted mean, weighting each position by P(the concept's
-  first token | prefix). Computed by `rk_scripts/09_plausible_positions.py`,
+  first token | prefix). Computed by `rk_scripts/08_plausible_positions.py`,
   which needs a forward pass per trial because the runner stores activations
   rather than logits. Weighting by an *independent* quantity is what
   distinguishes it from the dropped candidate.

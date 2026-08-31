@@ -27,9 +27,9 @@
   "xylophones"
  ],
  "split_seed": 20260827,
- "scaffold": "Write exactly this sentence and nothing else:\n\"{carrier}\"\nWhile you write it: {frame}.",
+ "scaffold": "The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.\n<sentence>{carrier}</sentence>\nWhile you write it: {frame}.",
  "similarity_covariates": true,
  "similarity_source": "carrier_similarity_L40.csv (readout layer 40)",
- "git_commit": "858d618ca134bd8183ae0e0b586eb7da17544f47",
- "timestamp": "2026-08-30T04:53:45"
+ "git_commit": "2e68acf3ec0e0605d8993500aac3fca5f1c10031",
+ "timestamp": "2026-08-31T00:11:39+00:00"
 }

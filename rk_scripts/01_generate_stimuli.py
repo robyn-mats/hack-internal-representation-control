@@ -46,13 +46,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from irc.paths import REPO_ROOT
 from screen_carriers import SELECTED_CARRIERS_V1
 
-# The prompt scaffold. A COLON, not a comma: a comma leaves the bare-noun
+# The prompt scaffold, amended 2026-08-31 (see PREREGISTRATION.md).
+# Delimiters plus BOTH failure modes named. The pilot found T3/T4 deviating
+# on 90%+ of trials by reproducing the whole third line -- the model could not
+# tell where the text to copy ended. Naming only the tags stops the markup
+# echoing and leaves the appending; naming only "nothing else", as the
+# previous scaffold did, stops neither.
+#
+# A COLON, not a comma: a comma leaves the bare-noun
 # conditions (T1 "dust", T2 "not dust") ungrammatical while the imperatives stay
 # fine, so grammaticality would otherwise vary with condition. The temporal
 # anchor ("While you write it") lives here rather than in the templates, so it
 # cannot correlate with the focus condition.
-SCAFFOLD = 'Write exactly this sentence and nothing else:\n"{carrier}"\nWhile you write it: {frame}.'
-SCAFFOLD_NO_FRAME = 'Write exactly this sentence and nothing else:\n"{carrier}"'
+SCAFFOLD = ("The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.\n"
+            "<sentence>{carrier}</sentence>\n"
+            "While you write it: {frame}.")
+SCAFFOLD_NO_FRAME = ("The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.\n"
+                     "<sentence>{carrier}</sentence>")
 
 # Concept split, drawn once and frozen (PREREGISTRATION.md). Hard-coded rather
 # than re-derived so it cannot drift with a library's RNG; verified below to

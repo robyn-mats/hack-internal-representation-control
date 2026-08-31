@@ -129,11 +129,20 @@ then regenerate. A new `cell_id` only when a factor value changes.
 ## Prompt scaffold
 
 ```
-Write exactly this sentence and nothing else:
-"{carrier}"
+The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>{carrier}</sentence>
 While you write it: {frame}.
 ```
 
+- **Delimiters, and both failure modes named.** Amended 2026-08-31 from
+  `Write exactly this sentence and nothing else:` with the carrier in quotes.
+  The pilot found T3 and T4 deviating on 90%+ of trials by reproducing the
+  whole third line: the model could not tell where the text to copy ended.
+  Quoting is not enough, but tags alone are *worse* -- a naive tagged
+  instruction breaks cells the plain one handles perfectly by echoing the
+  markup (T1: 0% -> 100%). The instruction must name **both** failures.
+  Saying only "do not include the tags" stops the echoing and leaves the
+  appending. Evidence and the four wordings tried are in `NOTES.md`.
 - **Colon, not comma.** A comma leaves bare-noun conditions ungrammatical while
   imperatives stay fine — grammaticality would vary with condition.
 - The temporal anchor lives in the scaffold, not the templates, so it cannot

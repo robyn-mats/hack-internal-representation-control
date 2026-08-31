@@ -419,12 +419,38 @@ line or commentary. tag4 names **both** failure modes:
 achieved. If it holds, that is one amendment (the scaffold) rather than two, and
 T3/T4/T5 keep their `PLAN.md` templates untouched.
 
-**Not yet adopted.** 0/42 covers 5 of 67 phrasings and omits C (22.1%) and N
-(14.0%) entirely. `scaffold2` tests both scaffolds over 14 phrasings x 10 pilot
-concepts x 2 carriers, 524 trials, using the real templates from
-`conditions.csv`. The failure mode to watch is a clean control regressing:
-`no commentary` is a strong constraint and it has not yet met the cells that ask
-the model to `juggle` or `glorf` a concept.
+**Confirmed and adopted (2026-08-31).** `scaffold2` ran both scaffolds over 14
+phrasings x 10 pilot concepts x 2 carriers, 524 trials, using the real templates
+from `conditions.csv`:
+
+| phrasing | plain | tag4 | | phrasing | plain | tag4 |
+|---|---|---|---|---|---|---|
+| T3 | 95% | **5%** | | J3 | 25% | **0%** |
+| T4 | 90% | **0%** | | C1 | 20% | **0%** |
+| N1 | 50% | **0%** | | C4, N3 | 15% | **0%** |
+| A1 | 30% | **0%** | | T1, D1 | 10% | **0%** |
+| **TOTAL** | **27.5%** | **0.4%** | | G1 I5 L1 | 0% | **0%** |
+
+Every phrasing improved, none regressed, no delimiter echoes. Leak rate
+24.0% → 0.4%. The failure I was watching for did not appear: `no commentary` does
+not collide with instructions that ask the model to act, and N1 (`juggle X`) went
+50% → 0%.
+
+Three honest limits, all recorded in `PREREGISTRATION.md`:
+
+- **T3 is rare, not fixed.** 1 trial in 20 still appended its instruction line.
+- **Deviation depends on the carrier.** The plain scaffold's rates here differ
+  from the full pilot in both directions (A1 30% vs 5.7%, C1 20% vs 38%) because
+  this used 2 of 7 carriers. The paired comparison within a run is sound; the
+  absolute rates are not the cell's true rate.
+- **The result belongs to this wording, not to delimiters.** The naive tagged
+  form was *worse than the incumbent*.
+
+Adopting it costs a full pilot re-run — every activation in `pilot1` was captured
+under the old scaffold — and moves `n_prompt_tokens` from 18-40 to 32-54, which
+is itself a pre-registered dilution covariate. `irc/conditions.csv` is untouched:
+T3/T4/T5 keep their `PLAN.md` templates, so the filler work stands as a
+documented dead end rather than a change.
 
 
 ## Open items

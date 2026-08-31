@@ -364,104 +364,52 @@ response tokens; mean over the top-k token positions by activation; activation a
 positions where the concept is a plausible next token. Whichever maximizes
 A-vs-T7 separation on the pilot.
 
-**Prompt scaffold.** The scaffold in `CLAUDE.md` is the default and is used
-unless the pilot triggers the rule below. It is *not* free to re-choose after
-seeing results.
+**Prompt scaffold — RESOLVED at Stage 2, 2026-08-31.** The trigger fired and the
+comparison was run; the outcome is recorded here and in the amendment table. The
+scaffold is now the tagged form in `CLAUDE.md` and is frozen.
 
-**Always reported, whether or not the trigger fires:** per-cell deviation and
-leak rates from the pilot under the default scaffold. These are results about
-instruction-following, not diagnostics, and they are reported from the pilot
-where they were measured.
+*What was pre-registered:* a trigger (any confirmatory cell above 50% deviation,
+or 25% pooled) and four candidate scaffolds, to be compared on the pilot
+concepts, selected by a compliance floor, then the `A > T1 > T7` manipulation
+check, then maximum A-vs-T7 separation.
 
-**Trigger**, evaluated on the 10 pilot concepts only: any cell entering a
-confirmatory contrast exceeds **50%** deviation, or pooled deviation exceeds
-**25%**. Fifty percent is the point at which the modal trial in a cell is no
-longer the intended stimulus, so that cell's mean activation is dominated by
-whatever else was written; twenty-five percent pooled is where the
-pre-registered compliant-only robustness check stops retaining enough trials to
-be a meaningful comparison.
+*What happened, and where the pre-registration was wrong.* The trigger fired on
+T3 (90.0%) and T4 (91.4%); pooled deviation was 6.8%, well under 25%. But the
+pilot also diagnosed the cause, and **none of the four candidates addressed it**.
+All four strengthened the *output constraint* ("output only the sentence"). The
+actual failure was the **copy boundary** — the model reproducing the entire third
+line, scaffold prefix included, because it could not tell where the text to copy
+ended. Strengthening "nothing else" is the wrong lever for that, so running the
+pre-registered comparison would have been a formality with a foreseeable null.
 
-The trigger applies to N, P, Q and R **as well**, even though high deviation
-there is the registered expectation. Q7 needs those cells to be interpretable:
-if `juggle X` deviates on 60% of trials, `I vs N/P vs Q/R/S` measures output
-text rather than internal representation. The deviation finding is preserved by
-reporting it from the pilot; exempting those cells would protect the finding at
-the cost of the contrast it exists to feed.
+Two further pre-registration errors, recorded rather than quietly fixed:
 
-**Candidates.** All four keep `While you write it: {frame}.` as the final line,
-so the distance from the concept tokens to the response tokens is identical
-across candidates. This is the constraint that matters: the readout is on
-response tokens, attention decays with distance, and any candidate placing text
-after the frame would push the concept further away — reducing measured
-activation for positional reasons unrelated to the instruction's meaning, and
-biasing the selection rule below against it for the wrong cause. Only the copy
-instruction and any constraint placed *before* the frame may vary.
+- The selection rule implied re-running the 4,627-trial pilot per candidate,
+  roughly 10 hours for four. What was run instead is a reduced comparison set:
+  the cells the manipulation check needs plus the cells that actually deviate.
+- The trigger was written before it was known that deviation depends heavily on
+  which carrier is being copied, so no single run's absolute rate is the cell's
+  true rate.
 
-    S1 (current)
-      Write exactly this sentence and nothing else:
-      "{carrier}"
-      While you write it: {frame}.
+*What was compared.* Two rounds, both on pilot concepts. First, five wordings x
+five conditions x 5 concepts x 2 carriers (210 trials) to find a tagged form that
+does not echo its own delimiters. Then the winner against the incumbent over 14
+phrasings x 10 concepts x 2 carriers (524 trials), using the real templates from
+`irc/conditions.csv`.
 
-    S2 (stronger copy instruction)
-      Repeat the following sentence exactly. Output only that sentence -- no
-      commentary, no explanation, no preamble.
-      "{carrier}"
-      While you write it: {frame}.
+*Result.* Deviation **27.5% → 0.4%** (72/262 → 1/262), improving every one of the
+14 phrasings and regressing none. Leak rate 24.0% → 0.4%. Zero delimiter echoes.
+The clean controls (G1, I5, L1) stayed clean, so the strengthened constraint does
+not collide with instructions that ask the model to act — N1 (`juggle X`) went
+50% → 0%.
 
-    S3 (explicit no-addition line, before the frame)
-      Write exactly this sentence and nothing else:
-      "{carrier}"
-      Do not add anything before or after it.
-      While you write it: {frame}.
+*Honest limits.* T3 is made rare, not impossible: 1 trial in 20 still appended
+its instruction line. The comparison used 2 of 7 carriers, and deviation varies
+with carrier, so these absolute rates do not transfer. The naive tagged wording
+was **worse than the incumbent** — it broke T1 from 0% to 100% by echoing markup
+— so the result belongs to this specific wording, not to delimiters in general.
 
-    S4 (S2 and S3 combined)
-      Repeat the following sentence exactly. Output only that sentence -- no
-      commentary, no explanation, no preamble.
-      "{carrier}"
-      Do not add anything before or after it.
-      While you write it: {frame}.
-
-These target the observed failure mode: in the timing sample the one non-exact
-completion reproduced the carrier correctly and *then* appended a comment about
-the instruction. Every candidate therefore strengthens the "nothing else"
-constraint rather than altering the frame, which is the manipulation and must
-not change.
-
-**Selection.** Not a minimization. A qualifying test:
-
-1. **Compliance floor** — pooled deviation below 25%. Necessary, not sufficient:
-   a scaffold could reach full compliance by making the model ignore the third
-   line entirely, which is perfect copying and no experiment.
-2. **Manipulation check** — `A > T1 > T7` must hold on the pilot concepts. This
-   is Q0's own gate applied to scaffold selection, and it is what catches the
-   failure in (1): a scaffold whose frame has gone inert fails here.
-3. **Among candidates passing both**, take the one maximizing A-vs-T7 separation
-   on the pilot — the same rule already used to choose the analysis layer and
-   the pooling rule, licensed by the same thing: it runs on the 10 pilot
-   concepts, and the 40 held-out are untouched until the choice is frozen.
-
-**Leak rate is a disqualifier, never an objective.** Leakage is the concept
-appearing in the output and concept activation is the dependent variable, so
-selecting the scaffold with the lowest leak rate risks selecting the one that
-suppresses the quantity being measured — shrinking the effect before the
-experiment starts. Overall leak level is therefore not optimized. A candidate is
-rejected, whatever its deviation rate, if its leak rate varies across the
-contrast families of interest (G / I / K / L / M) by more than the other
-candidates' spread: *differential* leakage is a confound rather than a nuisance.
-
-**Disclosure.** If the scaffold changes, the readout for the affected cells is
-reported under **both** scaffolds on the pilot concepts. A new scaffold that
-suppresses deviation may also suppress the internal effect that produced it —
-the two could share a cause — and that would otherwise look like a clean
-improvement. Pilot data under the default scaffold already exists, so this costs
-nothing.
-
-Changing the scaffold invalidates `stimuli.csv`, which is regenerated by
-`rk_scripts/01_generate_stimuli.py`; the regenerated row count and the resulting
-`n_prompt_tokens` range are recorded in the amendment, since prompt length is
-itself a pre-registered dilution covariate.
-
-**SAE width.** 16k for the pilot. 262k for the confirmatory run *if and only if*
+**SAE width.****SAE width.** 16k for the pilot. 262k for the confirmatory run *if and only if*
 its Neuronpedia index is confirmed available (see `CLAUDE.md`); otherwise 16k
 throughout. Decided before the held-out run, recorded below.
 
@@ -509,6 +457,7 @@ dated, with a reason. Anything recorded below post-dates the commit above.
 
 | Date | Change | Reason |
 |---|---|---|
+| 2026-08-31 | **Prompt scaffold amended** to the tagged form: `The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.` / `<sentence>{carrier}</sentence>` / `While you write it: {frame}.` `stimuli.csv` regenerated, 23,450 rows and 23,107 unique prompts unchanged; `n_prompt_tokens` 18-40 → 32-54. `irc/conditions.csv` untouched — T3/T4/T5 keep their PLAN.md templates. | The Stage 2 trigger fired on T3 (90.0%) and T4 (91.4%). Deviation across 14 phrasings falls 27.5% → 0.4% (72/262 → 1/262), leak 24.0% → 0.4%, no cell regressed, no delimiter echoes. The tagged scaffold also fixes T3 with its **original** dot filler, which no filler substitution achieved — so this is one amendment rather than two and the condition grid is unchanged. Held-out data does not exist. `artifacts/runs/pilot1/` was collected under the previous scaffold and is a pre-amendment record, not confirmatory data; the pilot is being re-run. |
 | 2026-08-30 | Leak rate additionally counts emoji depicting the concept, frozen in a `forms_emoji` column. 21 of 50 concepts have one. | The generated pilot produced 30 completions containing 🎺 for the concept `trumpets` — e.g. `The train arrived precisely on schedule. 🎺` under `do not skip past trumpets` — and the word-form detector caught 3 of them. The concept was reaching the output pictorially, which the pre-registered measure could not see. Recovers 27 trials, moving the pilot leak rate 5.66% → 6.25%. Derived from Unicode character names and hand-pruned (`fountains` → 🖋 is a pen; `information` → 💁 is a person; `deserts` → 🏝 is an island), same procedure as the derivational forms. Held-out data does not exist; the pilot is recomputable from stored completions without re-running. |
 | 2026-08-30 | Leak rate specified as two tiers — strict (inflectional, primary) and loose (plus pruned WordNet derivational, sensitivity). Forms frozen in `irc/concepts.csv` as `forms` and `forms_derived`. | The original wording said "an inflected form", but the implementation carried only number inflection, so `dusting`, `snowed` and `milked` would not have counted as leaks of Dust, Snow and Milk. LemmInflect supplies the full inflectional paradigm at no precision cost — its occasional non-words (`lightninged`) cannot produce false positives because such strings do not occur in text. Derivational forms are kept separate rather than merged, because WordNet's lemma-string linking imports unrelated senses. No experimental data existed at the time of this change. |
 | 2026-08-30 | A1/A2 templates shortened: `concentrate on {concept} while you write` → `concentrate on {concept}`, and likewise A2. No change to cells, factors or counts (still 67 phrasings, 25 cells). | The scaffold already supplies the temporal anchor ("While you write it:"), so A1/A2 rendered it twice. The redundancy made A2 (31 tokens) *longer* than its own negation G2 (30), inverting the length relationship on a pair Q0 and Q2 both rest on and confounding it with `n_prompt_tokens`, a pre-registered dilution check. Now 28 vs 30, differing by exactly the negation. No experimental data existed at the time of this change. |

@@ -594,6 +594,64 @@ model. So held-out measurement is not GPU-bound; only the 262k selection that
 precedes it is.
 
 
+## 2026-08-31 — Held-out compliance holds, and `information` is a special case
+
+Held-out generation: 18,487 prompts, **33 non-exact (0.18%)** against pilot2's
+0.043%. That 4.2x gap is almost entirely **one concept**:
+
+| | non-exact | rate |
+|---|---|---|
+| all held-out | 33/18,487 | 0.18% |
+| **excluding `information`** | **10/18,187** | **0.055%** |
+| pilot2 (10 concepts) | 2/4,627 | 0.043% |
+
+So the tagged scaffold generalized to 40 unseen concepts. 23 of the 33 deviations
+are `information`, and they split into two mechanisms.
+
+**1. The instruction is applied to the carrier rather than to a mental concept.**
+
+    I4  'leave information out'     -> 'The train arrived.'
+    J3  'de-emphasize information'  -> 'The train arrived on schedule.'
+
+The model obeyed — by deleting words from the sentence it was copying.
+`information` is **meta-linguistic**: the carrier *is* information, so
+"leave information out" has a coherent reading as an instruction about the
+copying task itself, and the away-instruction lands on the text instead of on a
+concept.
+
+This is the same mechanism as pilot2's single J3 deviation, which dropped "fresh"
+from "the plate with fresh herbs". That was recorded as possibly idiosyncratic;
+it is not. **Omission is a real failure mode**, and it inverts every other one
+chased in this project — commentary, echoed instructions, markup were all
+*additions*.
+
+**2. Incongruent verbs invite explanation of the verb.** N4 (`braise
+information`) and N5 (`centrifuge information`) append encyclopedic definitions
+of braising and centrifugation. That is the registered N-family prediction, with
+the "action" being to explain rather than to perform.
+
+### What follows for the analysis
+
+**No post-hoc exclusion.** `information` sits in the held-out 40, so this was
+invisible from the pilot — none of the 10 pilot concepts is meta-linguistic.
+Dropping it now would be excluding on an outcome after seeing held-out data,
+which `PREREGISTRATION.md` forbids and which the pilot/held-out split exists to
+prevent. It is reported.
+
+**A hypothesis for the writeup, not a filter.** Concepts whose word has a
+meta-linguistic reading in an instruction context — `information` most acutely,
+plausibly `secrecy`, `illusions`, `memories` — are ambiguous between "hold this
+in mind" and "this is about the text in front of you". That ambiguity is a
+property of the concept list, not of the manipulation, and it is checkable: the
+prediction is that away-directed instructions on such concepts produce
+*omissions* from the carrier, which no other concept should show.
+
+**Detection.** Omission passes `exact_match` as a deviation but produces no leak
+(12 of 33 held-out deviations leaked; the omissions are among the 21 that did
+not). A completion that is a strict subsequence of its target is the signature
+worth grepping for, in both runs.
+
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

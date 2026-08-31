@@ -1,0 +1,2 @@
+{"timestamp": "2026-08-31T00:16:28+00:00", "git_commit": "9d655d6d8ddfd2c711bc9c7409cff56f766a06e3", "model_id": "google/gemma-3-27b-it", "split": "pilot", "n_jobs": 4627, "capture_layers": [16, 31, 40, 53], "teacher_force": false, "stimuli": "/workspace/hack-internal-representation-control/stimuli.csv", "limit": 0, "event": "started"}
+{"timestamp": "2026-08-31T03:07:12+00:00", "event": "completed", "n_run": 4627, "n_non_exact": 2, "elapsed_s": 9703.8}

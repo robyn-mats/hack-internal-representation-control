@@ -1,0 +1,4 @@
+{"timestamp": "2026-08-31T06:23:18+00:00", "git_commit": "3634a801f56a98f6df344dac1376daddcfb64213", "model_id": "google/gemma-3-27b-it", "split": "held_out", "n_jobs": 18487, "capture_layers": [16, 31, 40, 53], "teacher_force": false, "stimuli": "/workspace/hack-internal-representation-control/stimuli.csv", "limit": 0, "event": "started"}
+{"timestamp": "2026-08-31T14:52:49+00:00", "event": "completed", "n_run": 18487, "n_non_exact": 33, "elapsed_s": 29979.1}
+{"timestamp": "2026-08-31T14:53:02+00:00", "git_commit": "92c72b81aaac1eba2000d521e3e3d22bf3bfd92e", "model_id": "google/gemma-3-27b-it", "split": "held_out", "n_jobs": 18487, "capture_layers": [16, 31, 40, 53], "teacher_force": false, "stimuli": "/workspace/hack-internal-representation-control/stimuli.csv", "limit": 0, "event": "started"}
+{"timestamp": "2026-08-31T15:03:00+00:00", "event": "completed", "n_run": 0, "n_non_exact": 0, "elapsed_s": 4.5}

@@ -7,7 +7,14 @@ must be recorded as dated amendments at the bottom, with reasons.
 - Repository: fork of Kamp (2026) *Intentional Control of Internal States in Gemma 3 27B*
 - Design rationale: `PLAN.md`. Operating conventions: `CLAUDE.md`.
 - Incidental findings and methodological notes: `NOTES.md`
-- Committed: **[fill in date]**, git commit **[fill in hash]**
+- Committed: **2026-08-30 00:01:42 EDT** (`2026-08-30T04:01:42+00:00`),
+  git commit **`99533c1`**
+- First experimental data of any kind: `2026-08-30T17:46:34Z`
+  (`artifacts/runs/smoke/generated/invocations.jsonl`), 13h 45m later. Every run
+  directory records its own start time and git commit, so the ordering is
+  checkable rather than asserted.
+- Amendments since that commit are listed at the bottom, each dated with its
+  reason. All of them predate any held-out measurement.
 
 ---
 

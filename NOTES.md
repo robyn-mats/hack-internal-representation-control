@@ -11,42 +11,34 @@ bear on pre-registered choices are cross-referenced from `PREREGISTRATION.md`.
 **Finding: 43 of Anthropic's 50 carrier sentences are contaminated by at least
 one of the 50 concept words. Seven survive.**
 
-**Which prior art this does and does not criticize** — the distinction matters
-and an earlier version of this note got it wrong.
+**Which prior art this criticizes: none of it.** Two earlier versions of this
+note got the reasoning wrong in opposite directions, so the resolution is worth
+stating carefully. The key fact is that **three different stimulus sets are
+involved.**
 
-*Not a criticism of Lindsey (2025) or Kamp (2026).* They pair each carrier with
-each concept and ask whether think / don't-think changes the concept's internal
-activation. Neither instruction makes a claim that can be false, so overlap
-between carrier and concept adds variance without invalidating the manipulation.
+| | carriers | concepts | conditions |
+|---|---|---|---|
+| Lindsey (2025) | the 50 sentences | the 50 concepts | think / don't-think |
+| Gurnee et al. (2026) §3.2 | their own | citrus fruits, `3² − 2`, line widths | focus / ignore / no-instruction |
+| **this fork** | **7 of Lindsey's 50** | **Lindsey's 50** | **Gurnee's grid, decomposed** |
 
-*Potentially a criticism of Gurnee et al. (2026) A.10, which is the finding this
-fork exists to decompose.* Their `ignore` condition is **"X is irrelevant to this
-task"** — the same declarative relevance claim as family L here, and its truth
-value depends on the stimulus in exactly the same way. A.10 reports no screening
-for carrier–concept overlap.
+`irc/words_paper.py` is transcribed from **Lindsey**, whose intentional-control
+experiment is think / don't-think. Neither instruction makes a claim that can be
+false, so carrier–concept overlap adds variance without invalidating anything.
+Lindsey never needed the two lists independent.
 
-If their `ignore` trials sometimes asserted something false, their headline
-effect — `ignore` well below mention on every model — could partly be the model
-responding to a **false statement** rather than to irrelevance framing. Those are
-different mechanisms with the same surface form, and A.10's design cannot
-separate them.
+**Gurnee's stimuli are their own and are not contaminated** — their protocol
+copies a sentence about a crooked painting while holding *citrus fruits* in mind,
+and they verify the point directly: the no-instruction baseline rate is
+approximately zero, which they describe as confirming the prompt context alone
+does not put the target concept in the readout. Since the context does not evoke
+the concept, "X is irrelevant to this task" is *true* when they assert it, so
+there is no false-statement confound in their design either.
 
-**Unverified.** A.10's "three task families" are not described in the notes
-available here and the paper is not in the repo, so whether the overlap actually
-occurred in their stimuli is unknown. The structural point stands regardless:
-any design using a relevance declarative has a truth value contingent on the
-stimulus, and that contingency needs screening or reporting.
-
-This is why the carrier screen is a contribution rather than housekeeping.
-`PLAN.md` §3 already narrows the claim to *the effect of `irrelevant` when it is
-true*, which makes the crossed version — `irrelevant` when it is false — the
-obvious follow-up, and a direct test of whether A.10's effect survives the
-distinction.
-
-**Within this fork**, the exposure is families B, E, F, K, L, M, S and T6, about
-half the grid. The imperative families (`ignore X`, `set X aside`) are unaffected:
-they are not false when the carrier is about X, only harder to obey, which is a
-finding rather than a confound.
+**The exposure is created by the recombination.** This fork puts Gurnee's
+relevance declaratives onto Lindsey's carriers, and those carriers overlap the
+concept list because nothing ever required them not to. Neither source paper was
+careless; the problem is new, and it belongs to the fork.
 
 Attrition, screening at layer 43 (see below):
 

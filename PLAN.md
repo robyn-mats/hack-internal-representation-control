@@ -21,7 +21,7 @@ five to eight phrasings per condition, read out with the Jacobian lens.
 | mention | X named, no instruction attached | Already high. Mere presence does most of the work. |
 | don't-think | "whatever you do, do not think about X" | Roughly the mention rate. **No reduction.** |
 | ignore | "X is irrelevant to this task" | **Well below mention, on every model.** |
-| *absent* | *concept never in the prompt* | **Not measured — no such condition.** |
+| *absent* | *concept never in the prompt* | **≈ zero** — measured in Figure 10, but absent from the per-phrasing Figure 65. |
 
 Two things follow.
 
@@ -42,7 +42,15 @@ phrasings differ on at least four dimensions simultaneously.
 mental-state verb. `X is irrelevant to this task` is declarative, has no
 mental verb, and — note — is **not negation-free**: `irrelevant` carries
 morphological negation. The two sit two moves apart in frame × negation-type,
-and the negation-free imperative cell was never run at all.
+and the negation-free imperative cell is never *reported separately*.
+
+Whether it was run at all is not determinable from the published paper: each
+condition is instantiated with five to eight phrasings, and those templates sit
+behind hover tooltips that are not in the page source. So the `ignore` condition
+may or may not contain a literal imperative among its phrasings — only its
+canonical form, the declarative, is published. Either way the per-phrasing
+structure is pooled into a single condition mean, which is what leaves the effect
+undecomposed.
 
 ### Candidate explanations, all separable
 
@@ -61,8 +69,22 @@ and the negation-free imperative cell was never run at all.
 ## 2 · Terminology
 
 `ignore < mention` is consistent with four different mechanisms and only one is
-suppression. The concept-absent baseline (`T7`) is what distinguishes them, and
-it is the control A.10 lacks. Use these terms and mean them:
+suppression. The concept-absent baseline (`T7`) is what distinguishes them.
+
+**A.10 lacks it only at the phrasing level.** Figure 10 does include a
+no-instruction baseline, at approximately zero, and Gurnee et al. use it to
+reason exactly this way: since that baseline is ~0, the ignore instruction
+*itself* activates the concept somewhat, even while holding it well below the
+focus level — which they identify as a parallel to the human "white bear"
+effect. So the deflationary reading below is **already excluded at the pooled
+level**: `ignore` is primed relative to absent, not merely unprimed.
+
+What Figure 65, the per-phrasing comparison, does lack is that baseline. Its four
+conditions are focus, ignore, mention and don't-think, with no concept-absent
+arm — so no individual phrasing can be placed against absence. That is where this
+fork's `T7` contributes, and it is a narrower claim than "the control they lack".
+
+Use these terms and mean them:
 
 | Term | Definition |
 |---|---|
@@ -370,7 +392,10 @@ should damage a negated *focus* command too.
 ## 6 · Limitations
 
 - **Different instrument from A.10.** SAE latents on Gemma versus J-lens on
-  Claude, and a writing task versus copying. A disagreement is not decisive.
+  Claude. The task is closer than it looks: their protocol also has the model
+  copy an unrelated carrier sentence while an instruction says what to hold in
+  mind, and reads out at the copied tokens — the same shape as this fork's
+  scaffold. A disagreement is not decisive.
   A J-lens arm would close this — `github.com/anthropics/jacobian-lens` fits the
   lens on open-weight HF decoders.
 - **No temporal dimension.** Measurement is concurrent with the instruction in

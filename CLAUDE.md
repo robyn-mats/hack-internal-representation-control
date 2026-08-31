@@ -81,7 +81,9 @@ question. Anthropic (Gurnee et al. 2026, appendix A.10) report that
 (declarative vs imperative) *and* **negation type** (morphological `ir-` vs
 syntactic `not`), so the contrast cannot attribute the effect. This fork crosses
 those factors and adds the negation-free imperative cell (`ignore X`,
-`set X aside`) that nobody has run.
+`set X aside`) that has never been reported separately — their `ignore`
+condition pools five to eight phrasings into one mean, and the individual
+templates are not published.
 
 ## Diverges from upstream
 

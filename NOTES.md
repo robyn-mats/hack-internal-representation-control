@@ -730,6 +730,176 @@ held-out data**. A stronger position than "token_mean won a comparison" — the
 claim is that `plausible` is undefined for a copying task.
 
 
+## 2026-08-31 — The T7 baseline was collapsing to one concept out of fifty
+
+The measure stage ran for the first time today and hit three bugs (below). This
+one was not a crash — it would have produced a complete, plausible-looking
+parquet with the baseline silently missing.
+
+### What T7 is
+
+T7 (`base_absent`) is the do-nothing condition: the prompt says write this
+sentence, and stops. No third line at all. It answers "how present is this
+concept when nothing whatsoever drew attention to it?"
+
+Because its prompt never names a concept, the prompt does not depend on which
+concept we are asking about. Seven carriers means exactly **seven distinct T7
+prompts**, and the run stores seven activation tensors.
+
+But measurement asks a per-concept question — "how strongly is *satellites*
+represented in this activation?" — and that question can be asked of the same
+neutral activation once per concept. Same tensor, fifty different questions.
+That is what makes it a baseline: one neutral state, compared against each
+concept in turn. `stimuli.csv` books this correctly as 350 rows (7 carriers ×
+50 concepts) sharing 7 prompts.
+
+### What went wrong
+
+`load_stimuli` built a lookup keyed by prompt (`prompt_group`) with
+`setdefault` — first row wins. Of the 50 concepts attached to each T7 prompt,
+**49 were discarded.** T7 came out measured against one arbitrary concept per
+carrier: 7 readout values where there should be 350 (70 within the pilot split).
+
+For 9 of the 10 pilot concepts there was no T7 baseline at all.
+
+### Why it mattered
+
+The pre-registration derives *both* Stage 2 values — analysis layer and pooling
+rule — from "A-vs-T7 separation" on the pilot. That comparison needs an A value
+and a T7 value for the same concept. It was not computable. Neither were the
+confirmatory contrasts that include T7: **Q0, the gate** (`A > T1 > T7`), plus
+Q1 and Q7.
+
+Nothing would have complained. The parquet would have had ~60,000 rows and the
+7 stray T7 rows would have looked like a small cell, not a broken one.
+
+### The fix, and why it is nearly free
+
+Keep every row per prompt and loop over them. The activation is loaded once and
+SAE-encoded once per (trial, layer); only the concept vector or latent set
+applied to it changes. So expanding T7 fiftyfold costs 50 column gathers, not
+50 SAE encodes — the encode is hoisted above the concept loop deliberately.
+
+### The general lesson
+
+Any condition whose prompt omits the concept is shared across concepts, and a
+prompt-keyed lookup will collapse it. Upstream has the same structure and
+handles it: its `no_mention` is shared across words per sentence, and the viewer
+ships "word-independent `no_mention` null bands, deduplicated". The design was
+right; only the fork's measure code collapsed it.
+
+Note the contrast with **T6** (`floor_control`), which names a *partner* concept
+(`fountains are irrelevant to this task` while the target is `dust`). Its prompt
+*does* vary by concept, so it has 350 rows over 350 prompt_groups and was never
+affected. Shared-ness follows from whether the concept appears in the prompt,
+not from whether the condition is a baseline.
+
+### The other two bugs in the same stage
+
+- **Capitalization.** The concept-vector bank keys words as
+  `irc/words_paper.py` stores them (`"Satellites"`); `stimuli.csv` carries the
+  lowercased form used in prompts. Every lookup missed, and the stage wrote a
+  **0-row parquet and reported success.** The SAE half already lowercased —
+  that side had been fixed and this one missed. There is now a guard that raises
+  rather than writing an empty file.
+- **The tail summary** rebuilt its DataFrame from the concept-vector rows
+  whichever readout had run, so an empty vector half crashed the summary for a
+  working SAE half, and `--readout sae` alone would have raised
+  `UnboundLocalError`. Each readout now summarizes itself.
+
+Two of the three were silent-wrong rather than loud-wrong, which is the argument
+for running the stage on 20 trials and *reading the row counts* before running
+it on 27,674.
+
+## 2026-08-31 — The latent selection is ragged, and 9 cells are empty
+
+Discovered by a guard, not by inspection. Vectorizing the SAE readout meant
+gathering all of a trial's concepts in one indexing operation, which assumes
+every concept has the same number of selected latents. It asserted that and
+died:
+
+    latent selections have unequal k at layer 16 ([1, 2, 3, 4, 5])
+
+`select_latents` takes "top-k concept-selective latents" with k=5, but k=5 is a
+**ceiling, not a count** — a latent has to pass the contrastive score and the
+control-word exclusion to be kept, and often fewer than five do.
+
+### The distribution
+
+Selected latents per concept, all 50 concepts, latents_v2 at 16k:
+
+| layer | k=0 | k=1 | k=2 | k=3 | k=4 | k=5 | mean k |
+|---|---|---|---|---|---|---|---|
+| 16 | 0 | 1 | 1 | 9 | 2 | 37 | 4.46 |
+| 31 | **3** | 8 | 11 | 5 | 7 | 16 | 3.06 |
+| 40 | **4** | 3 | 4 | 2 | 9 | 28 | 3.86 |
+| 53 | **2** | 5 | 4 | 6 | 6 | 27 | 3.80 |
+
+**92 of 200 (concept, layer) cells have k < 5.** Nine have **k = 0** — no
+latent survived selection at all, so the SAE readout for that concept at that
+layer does not exist.
+
+### Two things this breaks
+
+**1. k=0 must be missing, not zero.** `sum` over an empty index gives `0.0` and
+`max` over an empty axis raises. A zero would enter the analysis as a genuine
+measurement of "this concept is not active", when the truth is "we have no
+instrument for this concept here". The readout now emits **no row** for those
+cells and prints which they are.
+
+**2. Layers cover different concept sets, so their dz values are not
+comparable.** The pre-registered rule picks the analysis layer by A-vs-T7
+separation across layers. But if layer 40 is missing four concepts and layer 16
+is missing none, the two dz values describe different concepts — and a layer can
+rank higher partly by having dropped its hardest concepts. The pre-registration
+did not anticipate ragged selection, so it specifies no handling.
+
+Handled by ranking the layers on the **concepts paired at every layer**, so the
+four numbers describe one set, and reporting each layer's own-coverage dz beside
+it. Logged as an amendment; the criterion (A-vs-T7 dz) is unchanged, only the
+concept set it is evaluated on.
+
+### It hits the pilot
+
+Pilot concepts' k by layer — `Vegetables` has **k=0 at layer 40**:
+
+    concept         L16   L31   L40   L53
+    Amphitheaters   5     2     4     5
+    Frosts          5     5     5     5
+    Kaleidoscopes   5     5     5     5
+    Rubber          3     1     5     4
+    Satellites      5     4     4     5
+    Secrecy         5     5     5     5
+    Silver          3     1     4     5
+    Trumpets        5     5     5     5
+    Vegetables      5     2     0     3     <-- no readout at layer 40
+    Xylophones      5     5     5     5
+
+So the pilot layer comparison runs on 9 concepts, not 10. Layer 40 is a leading
+candidate on depth grounds (~65%), which makes this the awkward case rather than
+a hypothetical one.
+
+### Converging evidence for the 262k width
+
+`CLAUDE.md` argues for 262k on the grounds that 16,384 latents decompose too
+coarsely to separate a target concept from 49 others. This is that argument
+showing up as data: at 16k the selection cannot find even one concept-selective
+latent for 9 of 200 cells, and averages 3.06 of a possible 5 at layer 31. The
+`latent_sum` readout is also not comparable across concepts when k varies 1 to 5
+— within-concept pairing protects the registered contrasts, but any
+cross-concept statement about absolute latent activation is confounded by k.
+
+This was recorded before the confirmatory run was configured, so the 262k switch
+remains the pre-registered conditional it already was, with one more reason
+behind it.
+
+### Why the guard mattered
+
+Both of these were silent failure modes. A rectangular gather would have thrown
+on ragged input, so bug 1 was going to surface — but `sum` over an empty
+selection returns a clean `0.0`, and nothing anywhere would have flagged that
+nine cells of the primary readout were fabricated zeros.
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.
@@ -749,7 +919,7 @@ claim is that `plausible` is undefined for a copying task.
   than trusting the `leaked_concepts` field, which predates emoji support in
   `pilot1`.
 - `irc/conditions.csv` and `irc/concepts.csv` live under `irc/`, while
-  `CLAUDE.md`'s file table implies the repo root. Harmonise the paths or the doc.
+  `CLAUDE.md`'s file table implies the repo root. Harmonize the paths or the doc.
 - SAE width: `CLAUDE.md` records 16k as "the only variant Neuronpedia indexed",
   but the SAELens registry lists 65k / 262k / 1m at `l0_medium`. Unverified.
 - ~~Concept split size disagrees between documents.~~ **Resolved 2026-08-30:

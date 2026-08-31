@@ -126,8 +126,16 @@ print(f"profile: WB_MODE={config.MODE} model={config.MODEL_ID} layer={config.LAY
 PYCHECK
 # --- pre-warm the model weights into page cache (background) ---
 # /workspace is a network filesystem, so a cold read of the ~52 GB of
-# safetensors IS the ~9 minute model load. This box has ~2 TB of RAM, so the
-# page cache holds them comfortably and every load after the first is ~1 minute.
+# safetensors IS the ~9 minute model load. Page-caching them makes every load
+# after the first ~1 minute.
+#
+# Budget: the container's cgroup limit is what matters, NOT what `free` reports.
+# `free` and /proc/meminfo inside a container show the physical HOST (~2 TB
+# here, shared with every other pod on the machine); the real ceiling is
+#   /sys/fs/cgroup/memory/memory.limit_in_bytes   -- 233 GiB on this pod
+# and page cache is charged against it. 52 GB of weights plus a ~53 GB resident
+# model plus ~11 GB of activation files fits, but not by the margin `free`
+# implies. Check the cgroup file, not `free`, before assuming headroom.
 # Backgrounded, silent, and ionice'd to the idle class so it yields to anything
 # doing real work. Costs nothing that was not going to be paid anyway.
 #

@@ -62,8 +62,15 @@ def main() -> None:
             records[r["prompt_group"]] = r
     deviant = {pg for pg, r in records.items() if not r["exact_match"]}
 
-    rows = [r for r in csv.DictReader(args.stimuli.open())
-            if r["prompt_group"] in deviant]
+    # One row per prompt_group. prompt_group is NOT unique in stimuli.csv: each
+    # T7 group maps to 50 rows, one per concept, because T7 names no concept and
+    # its prompt is shared. Without this, a single deviant T7 trial would emit 50
+    # rows and the forced pass would run 50 identical prompts.
+    seen, rows = set(), []
+    for r in csv.DictReader(args.stimuli.open()):
+        if r["prompt_group"] in deviant and r["prompt_group"] not in seen:
+            seen.add(r["prompt_group"])
+            rows.append(r)
     if not rows:
         print(f"no deviant trials in {args.run_id}/{args.pass_} -- nothing to "
               f"teacher-force, and that is the result, not a failure.")

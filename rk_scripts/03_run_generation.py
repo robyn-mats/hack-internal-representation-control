@@ -298,19 +298,17 @@ def teacher_force_one(model, tokenizer, prompt: str, target: str,
             "n_capture_tokens": n_resp, "acts": acts}
 
 
-def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
-        teacher_force: bool, patterns: dict[str, re.Pattern],
-        patterns_loose: dict[str, re.Pattern] | None = None,
-        verbose: bool = False) -> None:
-    acts_dir = run_dir / "acts"
-    acts_dir.mkdir(parents=True, exist_ok=True)
-    gen_path = run_dir / "generations.jsonl"
+def plan_todo(jobs: list[dict], gen_path: Path):
+    """-> (todo, changed_phrasings, done_map, n_unverifiable).
 
-    # Resume keys on prompt_group AND the prompt's hash. prompt_group is
-    # phrasing/concept/carrier, which is stable across a template change -- so
-    # keying on it alone means editing a condition template and re-running
-    # silently keeps the old data under the new name. The run looks complete and
-    # is half stale. Comparing the prompt itself makes that impossible.
+    Factored out of run() so main() can call it BEFORE loading the model: a
+    fully-resumed run should not spend ~15 minutes reading 52 GB of weights only
+    to discover it has nothing to do. That happened once.
+
+    Resume keys on prompt_group AND the prompt's hash -- prompt_group is
+    phrasing/concept/carrier and survives a template edit, so keying on it alone
+    means editing a template and re-running silently keeps the old data.
+    """
     done, unverifiable = {}, 0
     if gen_path.exists():
         with gen_path.open() as fh:
@@ -328,7 +326,23 @@ def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
         elif prev is not None and prev != sha:
             changed.append(j["phrasing_id"])
             todo.append(j)          # prompt changed -> stale, redo it
+    return todo, changed, done, unverifiable
 
+
+def run(model, tokenizer, run_dir: Path, jobs: list[dict], layers: list[int],
+        teacher_force: bool, patterns: dict[str, re.Pattern],
+        patterns_loose: dict[str, re.Pattern] | None = None,
+        verbose: bool = False) -> None:
+    acts_dir = run_dir / "acts"
+    acts_dir.mkdir(parents=True, exist_ok=True)
+    gen_path = run_dir / "generations.jsonl"
+
+    # Resume keys on prompt_group AND the prompt's hash. prompt_group is
+    # phrasing/concept/carrier, which is stable across a template change -- so
+    # keying on it alone means editing a condition template and re-running
+    # silently keeps the old data under the new name. The run looks complete and
+    # is half stale. Comparing the prompt itself makes that impossible.
+    todo, changed, done, unverifiable = plan_todo(jobs, gen_path)
     print(f"[run] {len(todo)} to do, {len(done)} already present, "
           f"capturing {len(layers)} layers")
     if changed:
@@ -531,6 +545,15 @@ def main() -> None:
                 f"this module from inside that kernel instead:\n"
                 f"    rg = importlib.import_module('03_run_generation')\n"
                 f"    rg.run(model, tokenizer, run_dir, jobs, layers, False, *forms)")
+
+    # Bail out BEFORE the model load and before writing an invocation record: a
+    # run with nothing to do should cost seconds, not a 52 GB read, and should
+    # not leave a "started" record implying work that never happened.
+    todo_preview, changed_preview, _, _ = plan_todo(jobs, gen_path)
+    if not todo_preview:
+        print("\n    nothing to do -- every prompt is already present with a "
+              "matching hash.\n    Not loading the model.")
+        return
 
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
                             text=True).stdout.strip()

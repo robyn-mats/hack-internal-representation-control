@@ -47,11 +47,18 @@ from irc.constants import SAE_LAYERS
 from irc.paths import REPO_ROOT, RUNS
 from irc.pipeline import concept_cosines, load_vector_bank
 
-# Pooling rules. "topk_mean" selects positions BY the quantity being measured,
-# which inflates with noise -- a condition with higher variance scores higher at
-# equal true mean. Recorded so the pilot can compare it, but that bias is why it
-# should not win on a small margin. See PREREGISTRATION.md.
-POOLINGS = ("token_mean", "topk_mean", "max")
+# Pooling rules.
+#
+# `topk_mean` was pre-registered and is DROPPED, decided before any readout was
+# computed: it selects positions BY the quantity being measured, so a condition
+# with higher variance scores higher at equal true mean. Since conditions are
+# exactly what the contrasts compare, that is a confound rather than a nuisance.
+#
+# `max` is kept as a descriptive companion, not a candidate -- it has the same
+# selection problem in sharper form. Only `token_mean` and `plausible` (rule 3,
+# computed by 09_plausible_positions.py) are eligible to win.
+POOLINGS = ("token_mean", "max")
+ELIGIBLE = ("token_mean", "plausible")
 
 
 def load_stimuli(path: Path) -> dict[str, dict]:
@@ -86,18 +93,33 @@ def leak_patterns(path: Path) -> dict[str, re.Pattern]:
     return pats
 
 
-def pool(x: torch.Tensor, k: int = 3) -> dict[str, float]:
-    """Collapse the token axis of a 1-D per-token readout."""
-    return {
-        "token_mean": float(x.mean()),
-        "topk_mean": float(x.topk(min(k, x.numel())).values.mean()),
-        "max": float(x.max()),
-    }
+def pool(x: torch.Tensor, weights: torch.Tensor | None = None) -> dict[str, float]:
+    """Collapse the token axis of a 1-D per-token readout.
+
+    `weights`, when given, are the rule-3 plausibility weights for the same
+    positions: P(concept is the next token | prefix), from
+    09_plausible_positions.py. The pooled value is their weighted mean, so the
+    readout is taken where the concept could actually have surfaced.
+    """
+    out = {"token_mean": float(x.mean()), "max": float(x.max())}
+    if weights is not None and float(weights.sum()) > 0:
+        out["plausible"] = float((x * weights).sum() / weights.sum())
+    return out
+
+
+def load_plausibility(run_dir: Path) -> dict[str, list[float]]:
+    """Rule-3 weights, if 09_plausible_positions.py has been run."""
+    path = run_dir / "results" / "plausible_positions.json"
+    if not path.exists():
+        print("  note: no plausible_positions.json -- pooling rule 3 is absent. "
+              "Run 09_plausible_positions.py first.")
+        return {}
+    return json.loads(path.read_text())
 
 
 def measure_vectors(run_dir: Path, stimuli: dict, records: dict,
-                    variant: str = "word_tokens", device: str = "cuda",
-                    limit: int = 0) -> list[dict]:
+                    plaus: dict, variant: str = "word_tokens",
+                    device: str = "cuda", limit: int = 0) -> list[dict]:
     """Concept-vector cosine per trial, for the target concept and a control null.
 
     The null is the 100 control words: `PLAN.md` notes raw cosines are dominated
@@ -121,8 +143,10 @@ def measure_vectors(run_dir: Path, stimuli: dict, records: dict,
         A = torch.load(run_dir / rec["acts_file"]).float().to(device)
         cos = concept_cosines(A, Vn)                      # (L, W, T)
         tgt = w_idx[concept]
+        w = plaus.get(pg)
+        w = torch.tensor(w, device=device) if w is not None else None
         for li, layer in enumerate(SAE_LAYERS):
-            p = pool(cos[li, tgt])
+            p = pool(cos[li, tgt], w)
             null = cos[li, ctrl_idx].mean(-1)             # per control word
             for rule, val in p.items():
                 rows.append({
@@ -176,7 +200,8 @@ def main() -> None:
     print(f"  leak recomputed from completions; {stale} records disagreed with "
           f"their stored leaked_concepts")
 
-    rows = measure_vectors(run_dir, stimuli, records, args.variant,
+    plaus = load_plausibility(run_dir)
+    rows = measure_vectors(run_dir, stimuli, records, plaus, args.variant,
                            args.device, args.limit)
     out_dir = run_dir / "results"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -184,9 +209,11 @@ def main() -> None:
     df = pd.DataFrame(rows)
     path = out_dir / f"readout_concept_vector_{args.variant}.parquet"
     df.to_parquet(path, index=False)
-    print(f"\nwrote {path}  ({len(df):,} rows = "
+    print(f"\nwrote {path}  ({len(df):,} rows, "
           f"{df.prompt_group.nunique():,} trials x {len(SAE_LAYERS)} layers x "
-          f"{len(POOLINGS)} poolings)")
+          f"{df.pooling.nunique()} poolings)")
+    print(f"  poolings present: {sorted(df.pooling.unique())}")
+    print(f"  eligible to win the Stage 2 comparison: {list(ELIGIBLE)}")
 
 
 if __name__ == "__main__":

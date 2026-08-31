@@ -75,7 +75,15 @@ activation measurements — its residual norm is ~20× other tokens and the SAEs
 were not trained on it.
 
 **Primary method is generation.** Teacher-forcing is a robustness check on the
-same prompts. Two quantities are reported per condition:
+same prompts, and for the held-out run it is **restricted to the trials that
+deviate** (amended 2026-08-31; the pilot runs it in full). On a compliant trial
+the forced and generated activations are bit-identical — same prompt, same
+tokens, deterministic forward pass, verified at max|diff| = 0 — so the forced
+pass carries unique information only where the model did not write the carrier
+verbatim. Under the tagged scaffold that is 2 of 4,627 pilot trials, so forcing
+the full held-out grid would cost ~9.4 h to learn about ~12 trials. The trials
+are selected by `rk_scripts/10_deviant_stimuli.py` after the generated pass
+completes. Two quantities are reported per condition:
 
 - **Forced-token surprisal** — mean over the carrier's own tokens.
 - **Stop surprisal** — the surprisal of `<end_of_turn>` immediately after the
@@ -359,10 +367,22 @@ marginal at 40 and at chance at 31. That is a different instrument from SAE
 latent separation and does not constrain the choice above, but if the pilot is
 ambiguous between 40 and 53 it is weak converging evidence for 53.
 
-**Pooling rule.** Chosen on the pilot from exactly three candidates: mean over
-response tokens; mean over the top-k token positions by activation; activation at
-positions where the concept is a plausible next token. Whichever maximizes
-A-vs-T7 separation on the pilot.
+**Pooling rule.** Chosen on the pilot by A-vs-T7 separation. Three candidates
+were pre-registered; **`top-k by activation` is dropped, and this is recorded
+before any readout was computed.** It selects positions *by the quantity being
+measured*, so a condition with higher variance scores higher at equal true mean —
+and conditions are precisely what the contrasts compare, which makes it a
+confound rather than a nuisance. `max` is retained as a descriptive companion,
+not a candidate, having the same flaw in sharper form.
+
+Two candidates remain eligible:
+
+- **`token_mean`** — mean over the captured response tokens.
+- **`plausible`** — weighted mean, weighting each position by P(the concept's
+  first token | prefix). Computed by `rk_scripts/09_plausible_positions.py`,
+  which needs a forward pass per trial because the runner stores activations
+  rather than logits. Weighting by an *independent* quantity is what
+  distinguishes it from the dropped candidate.
 
 **Prompt scaffold — RESOLVED at Stage 2, 2026-08-31.** The trigger fired and the
 comparison was run; the outcome is recorded here and in the amendment table. The
@@ -462,6 +482,8 @@ dated, with a reason. Anything recorded below post-dates the commit above.
 
 | Date | Change | Reason |
 |---|---|---|
+| 2026-08-31 | Pooling candidate `top-k by activation` **dropped**; `max` demoted to descriptive. `token_mean` and `plausible` remain eligible. | It selects positions by the quantity being measured, so a condition with higher variance scores higher at equal true mean — a confound, since conditions are what the contrasts compare. Recorded **before any readout was computed**, so it cannot be a response to which rule won. |
+| 2026-08-31 | Teacher-forcing for the **held-out** run restricted to deviating trials; the pilot still runs it in full. | Forced and generated activations are bit-identical on compliant trials (verified, max abs diff = 0), so the forced pass is informative only where the model did not write the carrier verbatim — 2 of 4,627 under the tagged scaffold. Forcing the full grid costs ~9.4 h to learn about ~12 trials. `p_stop_soon` is thereby available only for deviating trials in held-out; it appears in no confirmatory contrast, and the pilot's full forced pass characterizes it across every cell. |
 | 2026-08-31 | **Prompt scaffold amended** to the tagged form: `The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.` / `<sentence>{carrier}</sentence>` / `While you write it: {frame}.` `stimuli.csv` regenerated, 23,450 rows and 23,107 unique prompts unchanged; `n_prompt_tokens` 18-40 → 32-54. `irc/conditions.csv` untouched — T3/T4/T5 keep their PLAN.md templates. | The Stage 2 trigger fired on T3 (90.0%) and T4 (91.4%). Deviation across 14 phrasings falls 27.5% → 0.4% (72/262 → 1/262), leak 24.0% → 0.4%, no cell regressed, no delimiter echoes. The tagged scaffold also fixes T3 with its **original** dot filler, which no filler substitution achieved — so this is one amendment rather than two and the condition grid is unchanged. Held-out data does not exist. `artifacts/runs/pilot1/` was collected under the previous scaffold and is a pre-amendment record, not confirmatory data; the pilot is being re-run. |
 | 2026-08-30 | Leak rate additionally counts emoji depicting the concept, frozen in a `forms_emoji` column. 21 of 50 concepts have one. | The generated pilot produced 30 completions containing 🎺 for the concept `trumpets` — e.g. `The train arrived precisely on schedule. 🎺` under `do not skip past trumpets` — and the word-form detector caught 3 of them. The concept was reaching the output pictorially, which the pre-registered measure could not see. Recovers 27 trials, moving the pilot leak rate 5.66% → 6.25%. Derived from Unicode character names and hand-pruned (`fountains` → 🖋 is a pen; `information` → 💁 is a person; `deserts` → 🏝 is an island), same procedure as the derivational forms. Held-out data does not exist; the pilot is recomputable from stored completions without re-running. |
 | 2026-08-30 | Leak rate specified as two tiers — strict (inflectional, primary) and loose (plus pruned WordNet derivational, sensitivity). Forms frozen in `irc/concepts.csv` as `forms` and `forms_derived`. | The original wording said "an inflected form", but the implementation carried only number inflection, so `dusting`, `snowed` and `milked` would not have counted as leaks of Dust, Snow and Milk. LemmInflect supplies the full inflectional paradigm at no precision cost — its occasional non-words (`lightninged`) cannot produce false positives because such strings do not occur in text. Derivational forms are kept separate rather than merged, because WordNet's lemma-string linking imports unrelated senses. No experimental data existed at the time of this change. |

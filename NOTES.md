@@ -11,19 +11,42 @@ bear on pre-registered choices are cross-referenced from `PREREGISTRATION.md`.
 **Finding: 43 of Anthropic's 50 carrier sentences are contaminated by at least
 one of the 50 concept words. Seven survive.**
 
-This is a fork-specific problem, and worth stating plainly because it is not a
-criticism of the prior art. Lindsey (2025) and Kamp (2026) pair each carrier
-with each concept and ask whether an instruction changes the concept's internal
-activation. Overlap between carrier and concept adds variance but does not
-invalidate the manipulation.
+**Which prior art this does and does not criticize** — the distinction matters
+and an earlier version of this note got it wrong.
 
-This fork's declarative conditions make it invalidating. `X is irrelevant to
-this task` is a **false statement** when the carrier is about X, and a false
-statement is a different manipulation from an irrelevance instruction. That
-applies to families B, E, F, K, L, M, S and T6 — roughly half the grid. The
-imperative families (`ignore X`, `set X aside`) are unaffected: they are not
-false when the carrier is about X, only harder to obey, which is a finding
-rather than a confound.
+*Not a criticism of Lindsey (2025) or Kamp (2026).* They pair each carrier with
+each concept and ask whether think / don't-think changes the concept's internal
+activation. Neither instruction makes a claim that can be false, so overlap
+between carrier and concept adds variance without invalidating the manipulation.
+
+*Potentially a criticism of Gurnee et al. (2026) A.10, which is the finding this
+fork exists to decompose.* Their `ignore` condition is **"X is irrelevant to this
+task"** — the same declarative relevance claim as family L here, and its truth
+value depends on the stimulus in exactly the same way. A.10 reports no screening
+for carrier–concept overlap.
+
+If their `ignore` trials sometimes asserted something false, their headline
+effect — `ignore` well below mention on every model — could partly be the model
+responding to a **false statement** rather than to irrelevance framing. Those are
+different mechanisms with the same surface form, and A.10's design cannot
+separate them.
+
+**Unverified.** A.10's "three task families" are not described in the notes
+available here and the paper is not in the repo, so whether the overlap actually
+occurred in their stimuli is unknown. The structural point stands regardless:
+any design using a relevance declarative has a truth value contingent on the
+stimulus, and that contingency needs screening or reporting.
+
+This is why the carrier screen is a contribution rather than housekeeping.
+`PLAN.md` §3 already narrows the claim to *the effect of `irrelevant` when it is
+true*, which makes the crossed version — `irrelevant` when it is false — the
+obvious follow-up, and a direct test of whether A.10's effect survives the
+distinction.
+
+**Within this fork**, the exposure is families B, E, F, K, L, M, S and T6, about
+half the grid. The imperative families (`ignore X`, `set X aside`) are unaffected:
+they are not false when the carrier is about X, only harder to obey, which is a
+finding rather than a confound.
 
 Attrition, screening at layer 43 (see below):
 

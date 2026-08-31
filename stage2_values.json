@@ -1,0 +1,412 @@
+{
+ "analysis_layer": 40,
+ "pooling_rule": "token_mean",
+ "pooling_rule_source": "fixed by the 2026-08-31 amendment (commit 61ab4f2), not derived here",
+ "primary_readout": "latent_sum",
+ "criterion": "paired dz, focus_imp_none minus base_absent, all trials",
+ "dz": 0.7108384803003787,
+ "mean_delta": 171.28815133231026,
+ "sd_delta": 240.9663461943269,
+ "n_concepts": 9,
+ "ranking_rule": "each layer's own usable concepts (literal registered rule); the same-day common-set restriction was superseded",
+ "q0_eligible_layers": [
+  40,
+  31,
+  16
+ ],
+ "q0_excluded_layers": [
+  53
+ ],
+ "concepts_dropped_from_common_set": [
+  "vegetables"
+ ],
+ "coverage_by_layer": {
+  "16": {
+   "base_absent": 10,
+   "focus_imp_none": 10,
+   "paired": 10
+  },
+  "31": {
+   "base_absent": 10,
+   "focus_imp_none": 10,
+   "paired": 10
+  },
+  "40": {
+   "base_absent": 9,
+   "focus_imp_none": 9,
+   "paired": 9
+  },
+  "53": {
+   "base_absent": 10,
+   "focus_imp_none": 10,
+   "paired": 10
+  }
+ },
+ "heldout_coverage": {
+  "16": {
+   "heldout_usable": 40,
+   "heldout_missing": 0,
+   "detectable_dz": 0.6
+  },
+  "31": {
+   "heldout_usable": 37,
+   "heldout_missing": 3,
+   "detectable_dz": 0.624
+  },
+  "40": {
+   "heldout_usable": 37,
+   "heldout_missing": 3,
+   "detectable_dz": 0.624
+  },
+  "53": {
+   "heldout_usable": 38,
+   "heldout_missing": 2,
+   "detectable_dz": 0.616
+  }
+ },
+ "heldout_usable": 37,
+ "detectable_dz": 0.624,
+ "derived_from": {
+  "run_id": "pilot2",
+  "pass": "generated",
+  "split": "pilot"
+ },
+ "ineligible_poolings": [
+  "max",
+  "plausible"
+ ],
+ "sae_layers_considered": [
+  16,
+  31,
+  40,
+  53
+ ],
+ "full_grid": [
+  {
+   "readout": "concept_vector",
+   "layer": 53,
+   "pooling": "token_mean",
+   "n": 10,
+   "mean_delta": 0.009440740091460084,
+   "sd_delta": 0.003846028718911649,
+   "dz": 2.454672281836634
+  },
+  {
+   "readout": "concept_vector",
+   "layer": 40,
+   "pooling": "token_mean",
+   "n": 10,
+   "mean_delta": 0.008131339933191001,
+   "sd_delta": 0.0035498198427259685,
+   "dz": 2.2906345373704387
+  },
+  {
+   "readout": "concept_vector",
+   "layer": 53,
+   "pooling": "plausible",
+   "n": 10,
+   "mean_delta": 0.011522558630011701,
+   "sd_delta": 0.005703702555138518,
+   "dz": 2.020189257525521
+  },
+  {
+   "readout": "concept_vector",
+   "layer": 40,
+   "pooling": "max",
+   "n": 10,
+   "mean_delta": 0.038997699320316305,
+   "sd_delta": 0.01939933949640751,
+   "dz": 2.010259129056334
+  },
+  {
+   "readout": "concept_vector",
+   "layer": 53,
+   "pooling": "max",
+   "n": 10,
+   "mean_delta": 0.037181605217379655,
+   "sd_delta": 0.018505347057908777,
+   "dz": 2.009235768506652
+  },
+  {
+   "readout": "concept_vector",
+   "layer": 31,
+   "pooling": "max",
+   "n": 10,
+   "mean_delta": 0.012261680859540186,
+   "sd_delta": 0.007902466106399797,
+   "dz": 1.5516271369528667
+  },
+  {
+   "readout": "latent_max",
+   "layer": 40,
+   "pooling": "max",
+   "n": 9,
+   "mean_delta": 651.4483865404886,
+   "sd_delta": 498.0405164594157,
+   "dz": 1.3080228716564144
+  },
+  {
+   "readout": "latent_max",
+   "layer": 40,
+   "pooling": "plausible",
+   "n": 9,
+   "mean_delta": 127.34097057438736,
+   "sd_delta": 108.46794068370392,
+   "dz": 1.1739963879808304
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 40,
+   "pooling": "plausible",
+   "n": 9,
+   "mean_delta": 191.80638814879427,
+   "sd_delta": 180.1267388196007,
+   "dz": 1.0648412856732554
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 40,
+   "pooling": "max",
+   "n": 9,
+   "mean_delta": 1134.1114472888764,
+   "sd_delta": 1211.6160864795645,
+   "dz": 0.9360320153755277
+  },
+  {
+   "readout": "concept_vector",
+   "layer": 40,
+   "pooling": "plausible",
+   "n": 10,
+   "mean_delta": 0.006762854861361664,
+   "sd_delta": 0.0073701146996977265,
+   "dz": 0.917605103437404
+  },
+  {
+   "readout": "latent_max",
+   "layer": 40,
+   "pooling": "token_mean",
+   "n": 9,
+   "mean_delta": 100.79112074110243,
+   "sd_delta": 111.49153017588618,
+   "dz": 0.9040249118663718
+  },
+  {
+   "readout": "latent_max",
+   "layer": 31,
+   "pooling": "plausible",
+   "n": 10,
+   "mean_delta": 18.48981999368494,
+   "sd_delta": 21.50084874965012,
+   "dz": 0.859957679297931
+  },
+  {
+   "readout": "latent_max",
+   "layer": 53,
+   "pooling": "max",
+   "n": 10,
+   "mean_delta": 614.0556187220982,
+   "sd_delta": 776.2450698100458,
+   "dz": 0.7910589614081067
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 31,
+   "pooling": "plausible",
+   "n": 10,
+   "mean_delta": 21.464343993756696,
+   "sd_delta": 27.703567881764318,
+   "dz": 0.7747862688793039
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 53,
+   "pooling": "max",
+   "n": 10,
+   "mean_delta": 846.7987574986049,
+   "sd_delta": 1127.9804354992089,
+   "dz": 0.7507211391692608
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 40,
+   "pooling": "token_mean",
+   "n": 9,
+   "mean_delta": 171.28815133231026,
+   "sd_delta": 240.9663461943269,
+   "dz": 0.7108384803003787
+  },
+  {
+   "readout": "latent_max",
+   "layer": 53,
+   "pooling": "token_mean",
+   "n": 10,
+   "mean_delta": 118.85539316449847,
+   "sd_delta": 174.25383670324706,
+   "dz": 0.6820819295181907
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 53,
+   "pooling": "token_mean",
+   "n": 10,
+   "mean_delta": 154.4191443852016,
+   "sd_delta": 233.12144855599607,
+   "dz": 0.6623978417331683
+  },
+  {
+   "readout": "latent_max",
+   "layer": 31,
+   "pooling": "max",
+   "n": 10,
+   "mean_delta": 109.63192269461494,
+   "sd_delta": 168.445339898895,
+   "dz": 0.6508456853743695
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 31,
+   "pooling": "max",
+   "n": 10,
+   "mean_delta": 139.61028791155132,
+   "sd_delta": 220.2020089994514,
+   "dz": 0.6340100553392278
+  },
+  {
+   "readout": "concept_vector",
+   "layer": 16,
+   "pooling": "max",
+   "n": 10,
+   "mean_delta": 0.004274250620177808,
+   "sd_delta": 0.0070067592067640395,
+   "dz": 0.6100181972932109
+  },
+  {
+   "readout": "latent_max",
+   "layer": 31,
+   "pooling": "token_mean",
+   "n": 10,
+   "mean_delta": 15.882755770002092,
+   "sd_delta": 26.576343981739154,
+   "dz": 0.597627566113506
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 53,
+   "pooling": "plausible",
+   "n": 10,
+   "mean_delta": 164.60957161293103,
+   "sd_delta": 279.06000341195295,
+   "dz": 0.5898716032405822
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 31,
+   "pooling": "token_mean",
+   "n": 10,
+   "mean_delta": 19.32601727076939,
+   "sd_delta": 33.27573494638745,
+   "dz": 0.5807840849167331
+  },
+  {
+   "readout": "latent_max",
+   "layer": 53,
+   "pooling": "plausible",
+   "n": 10,
+   "mean_delta": 124.57551589696361,
+   "sd_delta": 221.48803082435558,
+   "dz": 0.562448071949109
+  },
+  {
+   "readout": "latent_max",
+   "layer": 16,
+   "pooling": "token_mean",
+   "n": 10,
+   "mean_delta": 0.1831072483743939,
+   "sd_delta": 0.3794341213977586,
+   "dz": 0.48257981569992653
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 16,
+   "pooling": "token_mean",
+   "n": 10,
+   "mean_delta": 0.1831072483743939,
+   "sd_delta": 0.3794341213977586,
+   "dz": 0.48257981569992653
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 16,
+   "pooling": "max",
+   "n": 10,
+   "mean_delta": 0.8725787571498327,
+   "sd_delta": 2.182160861664,
+   "dz": 0.3998691262771758
+  },
+  {
+   "readout": "latent_max",
+   "layer": 16,
+   "pooling": "max",
+   "n": 10,
+   "mean_delta": 0.8725787571498327,
+   "sd_delta": 2.182160861664,
+   "dz": 0.3998691262771758
+  },
+  {
+   "readout": "concept_vector",
+   "layer": 31,
+   "pooling": "token_mean",
+   "n": 10,
+   "mean_delta": 0.0015753954241517914,
+   "sd_delta": 0.0065830096898677375,
+   "dz": 0.2393123355988017
+  },
+  {
+   "readout": "concept_vector",
+   "layer": 16,
+   "pooling": "token_mean",
+   "n": 10,
+   "mean_delta": 0.0002915108709463154,
+   "sd_delta": 0.002429891645031718,
+   "dz": 0.11996867084273227
+  },
+  {
+   "readout": "concept_vector",
+   "layer": 16,
+   "pooling": "plausible",
+   "n": 10,
+   "mean_delta": -0.002052803979521363,
+   "sd_delta": 0.0765474415092322,
+   "dz": -0.026817408120345592
+  },
+  {
+   "readout": "concept_vector",
+   "layer": 31,
+   "pooling": "plausible",
+   "n": 10,
+   "mean_delta": -0.00047035337629497826,
+   "sd_delta": 0.012925945400107658,
+   "dz": -0.03638831526327357
+  },
+  {
+   "readout": "latent_max",
+   "layer": 16,
+   "pooling": "plausible",
+   "n": 10,
+   "mean_delta": -0.8009533353901661,
+   "sd_delta": 2.532836839358014,
+   "dz": -0.31622776601479785
+  },
+  {
+   "readout": "latent_sum",
+   "layer": 16,
+   "pooling": "plausible",
+   "n": 10,
+   "mean_delta": -0.8009533353901661,
+   "sd_delta": 2.532836839358014,
+   "dz": -0.31622776601479785
+  }
+ ],
+ "git_commit": "c37c785151201a8dcac06f79a2e3ac60fe57afa9",
+ "timestamp": "2026-08-31T17:17:54+0000"
+}

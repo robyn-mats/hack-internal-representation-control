@@ -91,6 +91,30 @@ def separation(pc: pd.DataFrame, cell_hi: str, cell_lo: str) -> pd.DataFrame:
     return out.sort_values("dz", ascending=False)
 
 
+def q0_by_layer(pc: pd.DataFrame, readout: str, pooling: str) -> pd.DataFrame:
+    """Pilot Q0 ordering (A > T1 > T7) per layer, and hence layer eligibility.
+
+    Q0 is a HARD GATE in PREREGISTRATION.md: if the ordering does not reproduce
+    on held-out, Q1-Q10 are not run at all. A layer the pilot shows failing it
+    therefore cannot support the confirmatory analysis, so passing Q0 on the
+    pilot is a precondition for eligibility -- applied before the dz criterion
+    rather than as a tiebreak after it.
+    """
+    sub = pc[(pc.readout == readout) & (pc.pooling == pooling)]
+    rows = []
+    for layer, d in sub.groupby("layer", observed=True):
+        w = d.pivot_table(index="concept", columns="cell_id", values="value")
+        for c in (CELL_A, CELL_T1, CELL_T7):
+            if c not in w:
+                w[c] = float("nan")
+        a, t1, t7 = w[CELL_A].mean(), w[CELL_T1].mean(), w[CELL_T7].mean()
+        nz = int((w[[CELL_A, CELL_T1, CELL_T7]].fillna(0).abs().sum(axis=1) > 0).sum())
+        rows.append({"layer": int(layer), "mean_A": a, "mean_T1": t1,
+                     "mean_T7": t7, "informative": nz, "n": len(w),
+                     "q0_passes": bool(a > t1 > t7)})
+    return pd.DataFrame(rows).set_index("layer")
+
+
 def heldout_coverage(latents_version: str = "v2") -> pd.DataFrame:
     """Usable held-out concepts per layer, from the latent selection alone.
 
@@ -254,41 +278,57 @@ def main() -> None:
           f"(k=0 in the latent selection means no readout exists):")
     print(cov.to_string())
 
+    # Ranked on EACH LAYER'S OWN usable concepts -- the literal registered rule.
+    #
+    # An earlier amendment (same day) restricted this to concepts paired at
+    # every layer, intending to stop a layer ranking high by dropping its
+    # hardest concepts. It does the opposite. The common set excludes a concept
+    # that ANY layer cannot measure, so a layer which measures it and reads
+    # exactly 0.0 gets to shed it -- inflating that layer's dz -- while the
+    # layer that merely lacks an instrument for it gains nothing. On the pilot
+    # every layer's dz rose under the restriction except layer 40's, which
+    # could not rise because the concept was already absent there, and the
+    # argmax flipped. Superseded; both tables are printed.
+    #
+    # The correct accounting: measurable-but-silent is DATA (delta = 0, kept),
+    # no-instrument is MISSING (dropped).
+    sep_own = separation(pc, CELL_A, CELL_T7)
+    show_grid(sep_own[sep_own.pooling == POOLING_RULE],
+              "A-vs-T7 separation on EACH LAYER'S OWN concepts "
+              "(the registered rule, basis for the choice):")
+
     common = common_concepts(pc, PRIMARY_READOUT, POOLING_RULE)
-    all_concepts = set(pc.concept.unique())
-    dropped = sorted(all_concepts - common)
-    print(f"\nConcepts paired at every layer: {len(common)} of "
-          f"{len(all_concepts)}")
-    if dropped:
-        print(f"  dropped from the layer comparison: {', '.join(dropped)}")
-        print("  (a layer's own dz below uses only its own concepts, so the "
-              "layers are\n   ranked on the common set instead -- see the "
-              "amendment.)")
+    dropped = sorted(set(pc.concept.unique()) - common)
+    sep_common = separation(pc[pc.concept.isin(common)], CELL_A, CELL_T7)
+    show_grid(sep_common[(sep_common.pooling == POOLING_RULE)
+                         & (sep_common.readout == PRIMARY_READOUT)],
+              f"Same on the {len(common)} common concepts (SUPERSEDED rule, "
+              f"reported for transparency; drops {dropped}):")
 
-    # The choice: the layer, at the primary readout and the fixed pooling rule,
-    # ranked on the concepts available at EVERY layer so the four dz values
-    # describe the same concepts.
-    pc_common = pc[pc.concept.isin(common)] if common else pc
-    sep_common = separation(pc_common, CELL_A, CELL_T7)
-    show_grid(sep_common[sep_common.pooling == POOLING_RULE],
-              f"A-vs-T7 separation on the {len(common)} common concepts "
-              f"(basis for the layer choice):")
+    q0 = q0_by_layer(pc, PRIMARY_READOUT, POOLING_RULE)
+    print("\nPilot Q0 ordering per layer -- eligibility precondition "
+          "(Q0 is a hard gate):")
+    print(q0.to_string())
 
-    cand = sep_common[(sep_common.readout == PRIMARY_READOUT)
-                      & (sep_common.pooling == POOLING_RULE)
-                      ].sort_values("dz", ascending=False)
-    if cand.empty:
-        raise SystemExit(f"no rows for readout {PRIMARY_READOUT!r} at pooling "
-                         f"{POOLING_RULE!r}; present: "
-                         f"{sorted(set(zip(sep.readout, sep.pooling)))}")
     hc = heldout_coverage(args.latents_version)
     print("\nHeld-out coverage per layer (instrument metadata -- from the latent "
-          "selection,\nnot from held-out results):")
+          "selection,\nnot from held-out results; used only as a binary "
+          "usable/not count):")
     print(hc.to_string())
 
-    # Registered criterion: max dz. Tiebreak added 2026-08-31 (before any dz was
-    # computed): within the 0.10 dz band the pre-registration already calls
-    # ambiguous, prefer the layer with more usable held-out concepts.
+    cand = sep_own[(sep_own.readout == PRIMARY_READOUT)
+                   & (sep_own.pooling == POOLING_RULE)]
+    eligible = [int(l) for l in cand.layer if q0.loc[int(l), "q0_passes"]]
+    excluded = [int(l) for l in cand.layer if not q0.loc[int(l), "q0_passes"]]
+    if excluded:
+        print(f"\n  layers excluded for failing the pilot Q0 gate: {excluded}")
+    cand = cand[cand.layer.isin(eligible)].sort_values("dz", ascending=False)
+    if cand.empty:
+        raise SystemExit(
+            "no layer passes the pilot Q0 ordering. The base effect does not "
+            "reproduce at any layer on this readout -- report as a failed "
+            "replication rather than choosing a layer.")
+
     best = cand.iloc[0]
     if len(cand) > 1:
         top = cand[cand.dz >= float(cand.iloc[0].dz) - 0.10]
@@ -298,12 +338,9 @@ def main() -> None:
                         for _, r in top.iterrows()]
             ).sort_values(["usable", "dz"], ascending=False)
             if int(ranked.iloc[0].layer) != int(best.layer):
-                print(f"\n  TIEBREAK: layers {sorted(int(l) for l in top.layer)} "
-                      f"are within 0.10 dz.\n  Preferring layer "
-                      f"{int(ranked.iloc[0].layer)} "
-                      f"({int(ranked.iloc[0].usable)} usable held-out concepts) "
-                      f"over layer {int(best.layer)} "
-                      f"({int(hc.loc[int(best.layer), 'heldout_usable'])}).")
+                print(f"\n  TIEBREAK among Q0-eligible layers "
+                      f"{sorted(int(l) for l in top.layer)}: preferring layer "
+                      f"{int(ranked.iloc[0].layer)} on held-out coverage.")
             best = ranked.iloc[0]
     layer = int(best.layer)
 
@@ -313,24 +350,19 @@ def main() -> None:
     print(f"  pooling rule   : {POOLING_RULE}  (fixed by amendment, not chosen here)")
     print(f"  dz             : {best.dz:.3f}  "
           f"(mean delta {best.mean_delta:.4f}, sd {best.sd_delta:.4f}, n={int(best.n)})")
+    print(f"  Q0 on pilot    : PASSES  "
+          f"(A {q0.loc[layer, 'mean_A']:.1f} > T1 {q0.loc[layer, 'mean_T1']:.1f} "
+          f"> T7 {q0.loc[layer, 'mean_T7']:.1f})")
+    print(f"  informative    : {int(q0.loc[layer, 'informative'])} of "
+          f"{int(q0.loc[layer, 'n'])} pilot concepts")
     print(f"  held-out n     : {int(hc.loc[layer, 'heldout_usable'])} of 40 "
-          f"({int(hc.loc[layer, 'heldout_missing'])} concepts have k=0 here)")
+          f"({int(hc.loc[layer, 'heldout_missing'])} have k=0 here)")
     print(f"  detectable dz  : {hc.loc[layer, 'detectable_dz']} "
           f"(0.60 at n=40, rescaled)")
-    print("\n  layer ranking at this readout and pooling:")
+    print("\n  eligible layer ranking (own concepts, Q0-passing only):")
     for _, r in cand.iterrows():
-        print(f"    layer {int(r.layer):>2}  dz {r.dz:>7.3f}")
-
-    if len(cand) > 1:
-        runner_up = cand.iloc[1]
-        gap = float(best.dz - runner_up.dz)
-        print(f"\n  runner-up: layer {int(runner_up.layer)}, "
-              f"dz {runner_up.dz:.3f} (gap {gap:.3f})")
-        if gap < 0.10:
-            print("  NOTE: gap < 0.10 dz. The pre-registration records a prior "
-                  "expectation\n        favoring 53 if the pilot is ambiguous "
-                  "between 40 and 53. Resolve\n        explicitly in the "
-                  "amendment rather than taking the argmax silently.")
+        print(f"    layer {int(r.layer):>2}  dz {r.dz:>7.3f}  "
+              f"n={int(r.n)}")
 
     ordering_check(pc, layer, POOLING_RULE, PRIMARY_READOUT)
 
@@ -348,8 +380,12 @@ def main() -> None:
             "mean_delta": float(best.mean_delta),
             "sd_delta": float(best.sd_delta),
             "n_concepts": int(best.n),
-            "concepts_ranked_on": sorted(common),
-            "concepts_dropped_for_ragged_latents": dropped,
+            "ranking_rule": "each layer's own usable concepts (literal "
+                            "registered rule); the same-day common-set "
+                            "restriction was superseded",
+            "q0_eligible_layers": eligible,
+            "q0_excluded_layers": excluded,
+            "concepts_dropped_from_common_set": dropped,
             "coverage_by_layer": {str(k): v for k, v in
                                   cov.to_dict(orient="index").items()},
             "heldout_coverage": {str(k): v for k, v in

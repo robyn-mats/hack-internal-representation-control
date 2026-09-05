@@ -1248,6 +1248,182 @@ result about the fix — pilot's SAE missingness is entirely concept-level
 correct there; it was always specifically a `--compliant-only`-on-held-out risk,
 which is exactly why it's being closed before that run rather than after.
 
+## 2026-09-05 — Held-out unblinded: plain-language reading, prediction-matrix check, and the Q2 dilution investigation
+
+The confirmatory family was run for real on `heldout1` (all six invocations: SAE
+and concept-vector, each as primary/`--compliant-only`/`--hybrid-compliant`).
+Gate held in every run (SAE n=37, dz 0.608, p=.0007; concept-vector n=40, dz
+2.260, p=4.3e-17). Raw results are in
+`artifacts/runs/heldout1/confirmatory/*.json`. This entry is the interpretive
+layer on top of those numbers — what they mean in plain language, how they sit
+against the "Who's already been here" prior-art section, and a follow-up dive
+into the one result (Q2) that came out most surprising. Everything below the
+family table itself is **exploratory and uncorrected** — outside the 15-test
+Holm family, computed to interpret an already-unblinded result rather than to
+add a new confirmatory claim.
+
+### What's confirmed vs. genuinely new
+
+**Confirms prior literature, not surprising:**
+- **Q3c** (toward vs away, frame/negation held fixed) — "concentrate on X" /
+  "X is relevant" reliably beats "set X aside" / "X is beside the point" on
+  both readouts. Re-confirms A.10's headline (focus primes strongly, ignore
+  does much less), now as a matched pair instead of an incidental comparison.
+- **Q1** (T1 vs L) — "X is irrelevant to this task" reads below bare "X" on
+  concept-vector (dz 1.31). Direct replication of A.10's `ignore` row, now on
+  an open-weights model — closing the "no open-weights test of the bare-mention
+  claim" gap the artifact's prior-art section named.
+
+**Fills gaps the design was built to fill — new results, expected shape:**
+- **Q3b** (C vs A) — "do not ignore X" / "do not overlook X" / "do not set X
+  aside" / "do not skip past X" read well below "concentrate on X" / "think
+  about X" on both readouts. Nobody had tested a negated *focus* instruction;
+  this is one of the 25 minimal pairs the design exists to supply.
+- **Q5 / Q5d** (frame x negation omnibus, away and focus sides) — negation's
+  cost depends on whether the instruction is a command or a statement,
+  significant on both readouts, both sides. A.10 never had the 2x2 needed to
+  see this at all.
+- **Q7** (coherence gradient) — real coherent verbs, real-but-incongruent verbs
+  (`juggle X`), and nonce verbs (`glorf X`) produce different levels of
+  concept representation at each rung, on both readouts. No prior study ran a
+  coherence gradient like this.
+
+**Genuinely surprising:**
+- **Q2** (G vs T1) — "do not think about X" reads *below* bare mention on
+  concept-vector (dz -1.05, p=6.8e-8, n=40, well-powered). Contradicts both the
+  registered prediction ("no significant difference") and A.10's own reported
+  finding that `don't-think` sits at roughly the mention rate with no
+  reduction. SAE can't corroborate (underpowered: informative=16/37). See the
+  dedicated section below — this is largely explained away by dilution on
+  closer inspection.
+- **Q5b** (negation: I/J, K/L) — the negation-free away cell (`I`: "set X
+  aside" / "ignore X" — explicitly "the imperative form Anthropic named but
+  never ran") suppresses *more* than its morphologically-negated counterpart
+  (`J`: "disregard X" / "de-emphasize X") on concept-vector (dz -0.46,
+  Holm-significant). The never-tested cell turns out to out-suppress the one
+  Anthropic actually measured.
+- **Q5f** (double negation vs none) — "do not disregard X" (logically
+  equivalent to "concentrate on X") reads well below the plain positive
+  phrasing on both readouts (dz 0.66 SAE, 1.79 CV). Negation composition is not
+  transparent to whatever this measures, even when surface meaning survives.
+
+**Unresolved:** **Q3**, the primary contrast (I vs G) — not significant on
+either readout, and the two readouts disagree on sign (SAE dz -0.36, CV dz
++0.33). The cleanest available test of "is negation alone responsible for
+A.10's dissociation" doesn't come back with a usable answer.
+
+### The Q3 prediction matrix, checked against what was observed
+
+Location: the artifact's "The experiment, designed" section (box titled
+"Pre-register the predictions — they're cleanly orthogonal"), and verbatim in
+the actual repo at `PLAN.md` §5, "Pre-registered predictions" — the table
+`PREREGISTRATION.md` cites directly for Q3 ("the four hypotheses in `PLAN.md`
+§5 predict different signs").
+
+Filled in an "Observed" row using concept-vector at n=40 (fully powered).
+Cells `I`, `K`, `M`, `C` were never individually tested against T1 as a
+registered contrast — the design mostly tests *pairs between* these cells, not
+each one's absolute level — so these four numbers are **new, uncorrected,
+descriptive checks** computed directly from the held-out data to answer this
+question, not part of the 15-test family:
+
+| If the driver is... | G (do not think about X) | I (set X aside / ignore X) | K (X is beside the point) | M (X is not relevant) | C (do not overlook X) |
+|---|---|---|---|---|---|
+| Negation breaks instructions | fails | reduces | reduces | fails | fails to elevate |
+| Frame type (declarative wins) | fails | fails | reduces | reduces | elevates |
+| Mental verbs unactionable | fails | reduces | reduces | reduces | elevates |
+| Away-instructions specifically hard | fails | ? | reduces | fails | elevates |
+| **Observed (CV, n=40)** | **reduces** (dz -1.05, p<.0001) | **reduces** (dz -0.84, p<.0001) | **reduces** (dz -1.46, p<.0001) | **reduces** (dz -1.37, p<.0001) | **elevates** (dz +0.69, p<.0001) |
+| Observed (SAE) | n.s., underpowered (inf=16) | n.s., underpowered (inf=14) | n.s., underpowered (inf=11) | n.s., underpowered (inf=11) | elevates, p=.03 (inf=20 -- the one cell SAE can speak to) |
+
+No row matches cleanly. "Mental verbs unactionable" is closest (4 of 5 -- I,
+K, M reduce and C elevates as predicted) but still gets G wrong, and G is the
+one cell **every** row agrees should fail to move. Instead G reduces about as
+strongly as anything in the table. `C` is the cell `PLAN.md` says "separates
+row 1 from row 4," and it's also the one place SAE and concept-vector agree
+(both elevate). Bottom line: the pattern doesn't cleanly support any single
+pre-registered mechanism; the biggest anomaly is G's unpredicted reduction,
+not a clean win for one hypothesis over another.
+
+### Q2's surprise: candidate explanations, and the dilution checks
+
+Seven candidate explanations for G vs T1 (dz -1.05), roughly in order of how
+checkable they are with data already on disk:
+
+1. **Dilution / norm competition** -- cosine is normalized; T1 is a bare word,
+   G is a full sentence, so *any* added content can mechanically lower cosine
+   regardless of what the model represents. `PLAN.md`'s own "ruling out
+   dilution" section names this and lists the checks (below).
+2. **Layer 40 is not the clean concept-geometry layer for concept-vectors.**
+   The carrier-screening diagnostic in `PREREGISTRATION.md` found bare-text
+   concept geometry at ceiling for layers 42-54, only "marginal" at 40 (the
+   layer picked for the SAE's sake, not the concept-vector's).
+3. **Genuine Gemma-vs-Claude difference.** A.10 is Claude, J-lens, a copying
+   task. Kamp's Gemma replication already found `don't-think` barely differing
+   from *no mention* (a coarser, different baseline than T1 here).
+4. **Negation builds an integrated "not-X" representation** (Zhou et al.,
+   cited in the artifact) rather than cleanly suppressing X -- could project
+   onto a difference-in-means X-vector in ways unrelated to suppression.
+5. **Not a compliance artifact** -- checked: dz -1.05, informative=40,
+   identical p across primary / `--compliant-only` / `--hybrid-compliant`.
+6. **Unlikely to be chance**, given the effect size and stability across three
+   independent trial-selection methods.
+7. **The registered null was an extrapolation from a different model and
+   instrument** -- overturning it isn't evidence of a broken analysis.
+
+**Checks actually run** (both feasible from data already on disk; both point
+toward dilution):
+
+*Family N / nonce-verb controls* (already-registered `Q7` sub-comparisons, not
+new tests) -- semantically inert instructions, added as a control for exactly
+this reason:
+
+| Cell | Example | dz vs. T1 |
+|---|---|---|
+| G -- do not think about X | | -1.05 |
+| N -- incongruent, real verb | "juggle X" | -0.93 |
+| Q -- nonce verb | "glorf X" | **-1.18** (bigger than G) |
+
+*Prompt-length correlation across the full 25-cell family* -- pulled
+`n_prompt_tokens` (already in `stimuli.csv` for exactly this purpose) against
+each cell's dz relative to T1 (computed via `14_confirmatory.py`'s own
+`per_concept`/`wide`/`paired` helpers against the stored concept-vector
+readout, layer 40, `token_mean`, held-out split, all trials -- no new script
+was written, this was run ad hoc). Overall family correlation is weak
+(r ~ -0.21): the toward/focus cells add a similar token count to G but go
+sharply *up* (`concentrate on X`, dz +2.0), so dilution alone doesn't explain
+the whole design -- the toward-vs-away asymmetry (Q3c) survives it. But at
+*matched token count*, G is unremarkable:
+
+| Cell | Example | Extra tokens vs. T1 | dz vs. T1 |
+|---|---|---|---|
+| T3 -- filler | ". . . . . X" | +5.0 | **-1.16** |
+| T5 -- filler | "not . . . . X" | +5.0 | **-1.43** |
+| G -- do not think about X | | +5.0 | -1.05 |
+
+Meaningless filler dots, with no instruction and no semantic content
+whatsoever, reduce cosine similarity to the concept **as much as or more than**
+actually telling the model not to think about it. At matched length, G doesn't
+stand out from pure filler.
+
+**Checks not run, and why:** two of `PLAN.md`'s four dilution checks need raw
+per-token activations, not the readout tables: (a) raw (unnormalized)
+projection alongside cosine, and (b) reading out a second, unrelated concept
+under the same prompts (dilution should hit it indiscriminately; real
+suppression should be selective). Neither is stored locally --
+`artifacts/runs/heldout1/generated/` has no `acts/` directory on this machine,
+only `artifacts/runs/heldout1/generated/results/` -- the raw activations live
+solely in the 11.5 GB HF archive (`RobynMATS/whitebear-acts`). Both are doable
+if that archive is pulled down; neither was attempted here.
+
+**Reading:** the checks that *are* available lean toward dilution, not genuine
+suppression, as the leading explanation for Q2's specific surprise -- filler
+dots alone move the reading almost exactly as far as the "do not think about
+X" instruction does. Not settled without the raw-activation checks, but if
+forced to bet: G's apparent reduction below bare mention looks like mostly an
+artifact of comparing a full sentence against a single bare word, not evidence
+of active suppression.
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

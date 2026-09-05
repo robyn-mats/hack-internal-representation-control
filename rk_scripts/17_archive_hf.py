@@ -181,27 +181,43 @@ def main() -> None:
         print("\n--dry-run: nothing uploaded.")
         return
 
-    tok = os.environ.get("HF_TOKEN")
+    # Prefer a dedicated write token so the default HF_TOKEN can stay read-only:
+    # model and SAE downloads are the common path and need no write scope, and a
+    # token that cannot write cannot damage anything if it leaks into a log.
+    key = "HF_WRITE_TOKEN" if os.environ.get("HF_WRITE_TOKEN") else "HF_TOKEN"
+    tok = os.environ.get(key)
     if not tok:
-        raise SystemExit("HF_TOKEN not set (irc.env loads it from .env)")
+        raise SystemExit("neither HF_WRITE_TOKEN nor HF_TOKEN is set "
+                         "(irc.env loads them from .env)")
 
     from huggingface_hub import HfApi
     api = HfApi()
     who = api.whoami(token=tok)
-    role = who.get("auth", {}).get("accessToken", {}).get("role")
-    print(f"\nuser {who.get('name')}, token role {role}")
+    at = who.get("auth", {}).get("accessToken", {})
+    role = at.get("role")
+    print(f"\nusing {key}: user {who.get('name')}, role {role}, "
+          f"name {at.get('displayName')}")
     if role == "read":
         raise SystemExit(
-            "This is a READ-only token; upload will fail. Create a token with "
-            "write access at https://huggingface.co/settings/tokens and set "
-            "HF_TOKEN in .env. A fine-grained token scoped to write on just "
-            "this dataset repo is the tighter option.")
+            f"{key} is READ-only; the upload would fail partway through. "
+            f"Create a token with write access at "
+            f"https://huggingface.co/settings/tokens and set HF_WRITE_TOKEN in "
+            f".env. Fine-grained, scoped to write on just this dataset repo, "
+            f"is the tighter option.")
 
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
                             text=True, cwd=REPO_ROOT).stdout.strip()
 
-    api.create_repo(args.repo, repo_type="dataset", private=not args.public,
-                    exist_ok=True, token=tok)
+    try:
+        api.create_repo(args.repo, repo_type="dataset", private=not args.public,
+                        exist_ok=True, token=tok)
+    except Exception as exc:                                  # noqa: BLE001
+        raise SystemExit(
+            f"could not create or access {args.repo}: {type(exc).__name__}: "
+            f"{exc}\n\nA fine-grained token grants write per-repo, so it can "
+            f"read fine and still refuse this one. Check that the token's "
+            f"scope covers this exact repo name (and that the namespace "
+            f"matches your account or an org you can write to).") from exc
     print(f"repo {args.repo} ready (private={not args.public})")
 
     manifest = {"git_commit": commit, "created": time.strftime("%Y-%m-%dT%H:%M:%S%z"),

@@ -1,0 +1,350 @@
+{
+ "git_commit": "ce0882f804e51662450a83138867aaeb0047b676",
+ "created": "2026-09-05T13:49:16-0400",
+ "runs": [
+  "pilot2",
+  "heldout1"
+ ],
+ "files": [
+  {
+   "path": "runs/pilot2/generated/acts_packed.pt",
+   "bytes": 1847840325,
+   "sha256": "82bd61e3ae72119c26b93e4bda4b8233454b30058cc0505b5c47a7ae92fe5544"
+  },
+  {
+   "path": "runs/pilot2/generated/acts_index.json",
+   "bytes": 371189,
+   "sha256": "84dfabd977aa19d8ceae971d64a2cb6e891c6d7c467037cda49adbd621aedf13"
+  },
+  {
+   "path": "runs/pilot2/generated/generations.jsonl",
+   "bytes": 2974968,
+   "sha256": "3fd51ff6e193d0701ef79cc46d8dfe25b61a78698541acc0d01a4dcad79761dd"
+  },
+  {
+   "path": "runs/pilot2/generated/invocations.jsonl",
+   "bytes": 457,
+   "sha256": "55df421b0ea28c335c7f36401006f032ecf72f3fccc9096e89168dd285b30f3e"
+  },
+  {
+   "path": "runs/pilot2/teacher_forced/acts_packed.pt",
+   "bytes": 1847840325,
+   "sha256": "e97ed773a8841a6f7d0fe2adc5f0d621151c730e8537d07b9b2b2a254b355c75"
+  },
+  {
+   "path": "runs/pilot2/teacher_forced/acts_index.json",
+   "bytes": 371189,
+   "sha256": "84dfabd977aa19d8ceae971d64a2cb6e891c6d7c467037cda49adbd621aedf13"
+  },
+  {
+   "path": "runs/pilot2/teacher_forced/generations.jsonl",
+   "bytes": 4292439,
+   "sha256": "2899d0cecf523a15a2c78f7899955351bc5cfd753e0bc0830a1b0ba88757fc59"
+  },
+  {
+   "path": "runs/pilot2/teacher_forced/invocations.jsonl",
+   "bytes": 456,
+   "sha256": "a4e9e1daf6cbb7a07e178f02e4e04f8aa1b3426401ed2863f97308b1204ce6c9"
+  },
+  {
+   "path": "runs/heldout1/generated/acts_packed.pt",
+   "bytes": 7382195833,
+   "sha256": "1046afb0b15dde7981750921412d32a2f7d25e47f7195602afb375528b373199"
+  },
+  {
+   "path": "runs/heldout1/generated/acts_index.json",
+   "bytes": 1469286,
+   "sha256": "10f9c781e64b81c3fa398115a895f880c0127fa10103ef7628eb0e0c0ffdb5eb"
+  },
+  {
+   "path": "runs/heldout1/generated/generations.jsonl",
+   "bytes": 11813456,
+   "sha256": "c30fa208f2bde2f54613eef6e0625aded3a9d721e6edc2793c305a5d58ed3c07"
+  },
+  {
+   "path": "runs/heldout1/generated/invocations.jsonl",
+   "bytes": 919,
+   "sha256": "2304108db169df80d11df5111c4272a0ae3c2f0c6b50f96b3cee741ceb5a43b3"
+  },
+  {
+   "path": "runs/heldout1/teacher_forced/acts_packed.pt",
+   "bytes": 12947013,
+   "sha256": "ff47a78ea30f96a7756fdcd0557a98272dfad2af7d5c2b1ffacfa33236b5c4ac"
+  },
+  {
+   "path": "runs/heldout1/teacher_forced/acts_index.json",
+   "bytes": 2718,
+   "sha256": "875f3604e72c14b92fea4528ff772359b2c4fee07219d4bc4fffc3cde0ea15f0"
+  },
+  {
+   "path": "runs/heldout1/teacher_forced/generations.jsonl",
+   "bytes": 30384,
+   "sha256": "cf2f601d4a48c0f696497ca653cdcdaeb4ae9f9134e9000b761a5cab93ec77eb"
+  },
+  {
+   "path": "runs/heldout1/teacher_forced/invocations.jsonl",
+   "bytes": 414,
+   "sha256": "66e4b4b2fcf064259f4dbca1b75d1dc5412d76db64b2293711f367c4abb7130e"
+  },
+  {
+   "path": "concept_vectors/bank_word_tokens_v1.pt",
+   "bytes": 401397705,
+   "sha256": "3222478496f5f9750ae906e0366551a2dd2b75ef962d2efdf507858e591699a0"
+  },
+  {
+   "path": "latents_v2/Algorithms.json",
+   "bytes": 3900,
+   "sha256": "d0a711f1a038ba716cc16a82e029ad34f302087d91baf0774e1cc94ed1bacb74"
+  },
+  {
+   "path": "latents_v2/Amphitheaters.json",
+   "bytes": 3063,
+   "sha256": "78d02ceff71cd49381ec373a0f75ca014e85179f0268f9531104f06b0555d325"
+  },
+  {
+   "path": "latents_v2/Aquariums.json",
+   "bytes": 3057,
+   "sha256": "a97d373522566e56bfaba69b1af73562ffb54c45c9fff184c5732574def3779c"
+  },
+  {
+   "path": "latents_v2/Avalanches.json",
+   "bytes": 3911,
+   "sha256": "dfdef88aeeccef89082e26b0f704bb89261b6b5a37731411248188b1928e993c"
+  },
+  {
+   "path": "latents_v2/Bags.json",
+   "bytes": 917,
+   "sha256": "e66fce1d8a7c755f432d1881e80b7a308b4a3febea96ff4d380f2acf0ffeff35"
+  },
+  {
+   "path": "latents_v2/Blood.json",
+   "bytes": 3375,
+   "sha256": "a21e9b399c0591e86e8b557857496e0ced3f1bffa49cc45519c1c7ac683ac18e"
+  },
+  {
+   "path": "latents_v2/Boulders.json",
+   "bytes": 3153,
+   "sha256": "12c5baf2ec185e14fffe58a07e1b0fce5978aaf39f7c2c1e7a92225186bc27e3"
+  },
+  {
+   "path": "latents_v2/Bread.json",
+   "bytes": 2754,
+   "sha256": "c5cc222bf3f7b07f6112abe5b9c064a096e9bf7a374ed3f12ba0f1591f3a6f02"
+  },
+  {
+   "path": "latents_v2/Cameras.json",
+   "bytes": 2427,
+   "sha256": "540b02337a88f3e60e362ab94eace3d5443ca5bdecf6eba14386824453ec35e3"
+  },
+  {
+   "path": "latents_v2/Caverns.json",
+   "bytes": 3300,
+   "sha256": "2e540de0bc63d9ebba9f2fa95e3fff747188caa07e5c2d9c8ed24133a6f6ab8c"
+  },
+  {
+   "path": "latents_v2/Constellations.json",
+   "bytes": 2808,
+   "sha256": "9ce7b8ce30f43a766c3daefbf980c136b081c6b9e0c0d3e474f9303da6a15071"
+  },
+  {
+   "path": "latents_v2/Contraptions.json",
+   "bytes": 4024,
+   "sha256": "03bd5048d6b8edc1d6e645eea4fcbd954bc087b63b6ad7d267ca698f4db991bc"
+  },
+  {
+   "path": "latents_v2/Denim.json",
+   "bytes": 2937,
+   "sha256": "52096b7fc9bdf2a0039a958a0222d6949b11611c137b4f34911d7b2abbe50f09"
+  },
+  {
+   "path": "latents_v2/Deserts.json",
+   "bytes": 1484,
+   "sha256": "66e7360792d24f92af8c40073374451772cf3bac5e467355a5a8f594bfeb08fd"
+  },
+  {
+   "path": "latents_v2/Dirigibles.json",
+   "bytes": 3928,
+   "sha256": "b37757588a8c93613775f89a34c4aa05df5f98cf4545f6e41461cdf4d2e6a7e2"
+  },
+  {
+   "path": "latents_v2/Dust.json",
+   "bytes": 3151,
+   "sha256": "0349a4949a6c40182c6dcb0f6aaa1086b1f823f2534110d0873323bbea8226b3"
+  },
+  {
+   "path": "latents_v2/Dynasties.json",
+   "bytes": 3964,
+   "sha256": "181f099617bce6745e15aaca25a8e895b58fa8093eb5143b244621a74199dcf1"
+  },
+  {
+   "path": "latents_v2/Fountains.json",
+   "bytes": 1986,
+   "sha256": "fb8762796c3a0761ce6dae8286208a08b167776fde257661a03668720fe02062"
+  },
+  {
+   "path": "latents_v2/Frosts.json",
+   "bytes": 3931,
+   "sha256": "f3170242f43f40829ef60c3646ef81732ea7e01bc602f754f0f4f8c32e02f3e5"
+  },
+  {
+   "path": "latents_v2/Harmonies.json",
+   "bytes": 3505,
+   "sha256": "b9947e16eb5818961d4044ae94b7d78b2e319050face3af625737b0ab6be4a28"
+  },
+  {
+   "path": "latents_v2/Illusions.json",
+   "bytes": 3503,
+   "sha256": "050d84d31592a42c2134019679d94265dc8b93ead6ed647cc270c137539612ee"
+  },
+  {
+   "path": "latents_v2/Information.json",
+   "bytes": 3701,
+   "sha256": "f850248409b8a68dba4ef17f4e8b4b5b5b42db5f4825ef4be38b3be07e7652cc"
+  },
+  {
+   "path": "latents_v2/Kaleidoscopes.json",
+   "bytes": 3762,
+   "sha256": "6eb55d65d57558c9a33d1413510e180e1c542961d38dcfc97988ad74d12ac68a"
+  },
+  {
+   "path": "latents_v2/Lightning.json",
+   "bytes": 2377,
+   "sha256": "746b742aa880f8e78cf4f50cbd2790d99ee1358e53036f0a9f1d74e5171f7617"
+  },
+  {
+   "path": "latents_v2/Masquerades.json",
+   "bytes": 3838,
+   "sha256": "9e760c45ec3e3f7236f882fe6a421d5a4db179405fd15b98d5c3c938dc7f6a8f"
+  },
+  {
+   "path": "latents_v2/Memories.json",
+   "bytes": 2963,
+   "sha256": "144600085895e6ead8b60e74c51fe7c428142bfad277e207670dd2655c9171c6"
+  },
+  {
+   "path": "latents_v2/Milk.json",
+   "bytes": 2377,
+   "sha256": "c06ce00e50461840b7ff0abc4a64209fa2edcca1e5941f386678c9e6bcdfb0ea"
+  },
+  {
+   "path": "latents_v2/Mirrors.json",
+   "bytes": 2037,
+   "sha256": "fc1900aecd4bf197d625d566b8dee77c0bbfc1933eeef8fb1616d019e24c3d52"
+  },
+  {
+   "path": "latents_v2/Monoliths.json",
+   "bytes": 3931,
+   "sha256": "0501ec3e240d53ee23ae73c817b9c2d499e37f8c89f587d53d6cc8b68490c946"
+  },
+  {
+   "path": "latents_v2/Oceans.json",
+   "bytes": 1320,
+   "sha256": "b5f074c9b1561253d5621c2d2c9c7608b548718101f6e3a5ef7618e957a60e2a"
+  },
+  {
+   "path": "latents_v2/Origami.json",
+   "bytes": 3729,
+   "sha256": "557975aac34762da4da00cc588060dd02e4b04a0465c5567ec830dca6484aff3"
+  },
+  {
+   "path": "latents_v2/Peace.json",
+   "bytes": 3713,
+   "sha256": "897f54a690abf20d7c061d50fb9819eab7b989c75ae8947fe0fe3dedee5d5372"
+  },
+  {
+   "path": "latents_v2/Phones.json",
+   "bytes": 3605,
+   "sha256": "3688fabc4be69184b670587980023b6ce3fb3a7ac8a547f3bf3fd34360073af4"
+  },
+  {
+   "path": "latents_v2/Plastic.json",
+   "bytes": 2769,
+   "sha256": "d91186366087f8aedcb36ead6d24908113466b447b47394c9f080974756510cc"
+  },
+  {
+   "path": "latents_v2/Poetry.json",
+   "bytes": 2754,
+   "sha256": "e367e449da87896cc4504c068e68bfbd74df4392f1c93e68cc88dfcd9ad72337"
+  },
+  {
+   "path": "latents_v2/Quarries.json",
+   "bytes": 3319,
+   "sha256": "fc0fe0c9dbdb5588c8523bccf75d7bd4e613c11c287c67945bfe8e2d465d700a"
+  },
+  {
+   "path": "latents_v2/Rubber.json",
+   "bytes": 2570,
+   "sha256": "bdec607b8c61ab1150c758fe05ae772d2857676ceec2b6d2e8a10759e42753a0"
+  },
+  {
+   "path": "latents_v2/Sadness.json",
+   "bytes": 2231,
+   "sha256": "181cb04fbfecd6d471d1246ca2e1bc08b0a09ced5ab91a3a76507c458c2bb743"
+  },
+  {
+   "path": "latents_v2/Satellites.json",
+   "bytes": 3542,
+   "sha256": "40940b6d8c4ebbd1b68d636e416d88fb8f867cbb0f4c725d1ed63b1a5beef549"
+  },
+  {
+   "path": "latents_v2/Secrecy.json",
+   "bytes": 4028,
+   "sha256": "9a9b7a4a34647d2401f4e4f145574667a7e89bf028a4107939e93eaa9ad178e3"
+  },
+  {
+   "path": "latents_v2/Silver.json",
+   "bytes": 2552,
+   "sha256": "0011c42e0f2f39ce2b3e7b94b6c0950f724f900a25d0c97eabff737da1825782"
+  },
+  {
+   "path": "latents_v2/Snow.json",
+   "bytes": 1638,
+   "sha256": "2a723d8a4e52d297fcca5a0fede3cb3c587de81b4053518a2e89a385b4584495"
+  },
+  {
+   "path": "latents_v2/Sugar.json",
+   "bytes": 2837,
+   "sha256": "6bfef69eed933e05ec9c34f869cb182785d072a0d15455f89991721d560f466b"
+  },
+  {
+   "path": "latents_v2/Treasures.json",
+   "bytes": 3103,
+   "sha256": "49e6736f46d639fe2f2b34c2a00561c392598bd8563d4d1642b00a46331a0fae"
+  },
+  {
+   "path": "latents_v2/Trees.json",
+   "bytes": 527,
+   "sha256": "014af6c6bb7006222499b881d7fc3c041da4f9a923b29b572d79f35a691bc00c"
+  },
+  {
+   "path": "latents_v2/Trumpets.json",
+   "bytes": 3918,
+   "sha256": "98706b67b4e0cbd11d6eafa240e1096121cfb144b14ac8d3699140f4f905d3f0"
+  },
+  {
+   "path": "latents_v2/Vegetables.json",
+   "bytes": 2034,
+   "sha256": "22fe620306d042d552f75c754a8dc695e6cf963ef2101d75894ac8555b613b6d"
+  },
+  {
+   "path": "latents_v2/Volcanoes.json",
+   "bytes": 2059,
+   "sha256": "9a1c8ca2380feb7e5c2d8c00767fb1c2192c24909c87ddfed87b2c0fde9325e7"
+  },
+  {
+   "path": "latents_v2/Xylophones.json",
+   "bytes": 3905,
+   "sha256": "df8a9fc5b05c0148cb18fcd70dcf02317c35f73f960aacc7114d52f92b663882"
+  },
+  {
+   "path": "latents_v2/Youths.json",
+   "bytes": 3768,
+   "sha256": "8422155ab9290e6292b355b40439516e4bc3c268d848254c7969169977150efc"
+  },
+  {
+   "path": "neuronpedia_cache.json",
+   "bytes": 28105,
+   "sha256": "3bc19fa425b23b4d8af046ebaffe82c655fa7c0a818bb483aebea0341542222f"
+  }
+ ]
+}

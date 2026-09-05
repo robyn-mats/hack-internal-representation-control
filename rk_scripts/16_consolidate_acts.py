@@ -113,23 +113,31 @@ def verify(run_dir: Path, limit: int = 0) -> bool:
             if r.get("acts_file"):
                 files[r["prompt_group"]] = r["acts_file"]
 
-    bad, checked = 0, 0
-    for t in ix["trials"]:
+    # Parallel, for the same reason the measure stage prefetches: a sequential
+    # reader gets ~1 file/s here, which would make a full verify take hours.
+    from concurrent.futures import ThreadPoolExecutor
+
+    todo = [t for t in ix["trials"] if t["prompt_group"] in files]
+    if limit:
+        todo = todo[:limit]
+
+    def check(t):
         pg = t["prompt_group"]
-        if pg not in files:
-            continue
         orig = torch.load(run_dir / files[pg], map_location="cpu")
         got = packed[:, t["start"]:t["start"] + t["length"], :]
-        if got.shape != orig.shape or not torch.equal(got, orig):
-            bad += 1
-            if bad <= 3:
-                print(f"  MISMATCH {pg}: {tuple(got.shape)} vs "
-                      f"{tuple(orig.shape)}")
-        checked += 1
-        if limit and checked >= limit:
-            break
-        if checked % 2000 == 0:
-            print(f"  verified {checked:,}...", flush=True)
+        ok = got.shape == orig.shape and torch.equal(got, orig)
+        return pg, ok, tuple(got.shape), tuple(orig.shape)
+
+    bad, checked = 0, 0
+    with ThreadPoolExecutor(max_workers=32) as pool:
+        for pg, ok, gs, os_ in pool.map(check, todo):
+            if not ok:
+                bad += 1
+                if bad <= 3:
+                    print(f"  MISMATCH {pg}: {gs} vs {os_}")
+            checked += 1
+            if checked % 4000 == 0:
+                print(f"  verified {checked:,}/{len(todo):,}...", flush=True)
     print(f"  verified {checked:,} trials, {bad} mismatches")
     return bad == 0
 

@@ -1424,6 +1424,117 @@ forced to bet: G's apparent reduction below bare mention looks like mostly an
 artifact of comparing a full sentence against a single bare word, not evidence
 of active suppression.
 
+## 2026-09-05 — Held-out deviations, read individually: `information` dominates, and a few are genuinely interesting
+
+`15_compliance.py` was run for real on `heldout1` (deviation 0.179% -- 33 of
+18,487 trials, matching the number already quoted in `HANDOFF.md`; leak
+0.065%, all 12 of them self-leak, zero other-leak, so no carrier-contamination
+signal anywhere in held-out). Output: `artifacts/runs/heldout1/confirmatory/compliance_by_cell.csv`.
+
+The registered directional deviation prediction (action-imperative >
+mental-imperative > declarative > bare-baseline) did **not** hold as an
+ordering: observed was bare-baseline > action-imperative > mental-imperative
+> declarative. The inversion traces to a single known cause -- `T3`'s residual
+filler-boundary leak (2.14%, the only non-zero contributor to the
+bare-baseline group; T1/T2/T4/T5 are all a clean 0%) -- not a reversal of the
+substantive claim. The one step that *does* trend as predicted
+(action-imperative > mental-imperative, diff +0.33%) isn't significant
+(p=.32); the step that inverts (declarative > bare-baseline, wrong direction,
+p=.057) is the one T3 sits in.
+
+**Provenance correction, recorded because it was said out loud in
+conversation and shouldn't be left uncorrected:** an earlier remark called the
+`information` / "leave X out" collision below a *pilot* finding. It isn't --
+`information` is one of the 40 **held-out** concepts (`PREREGISTRATION.md`'s
+split has it in that list; the 10 pilot concepts are amphitheaters, frosts,
+kaleidoscopes, rubber, satellites, secrecy, silver, trumpets, vegetables,
+xylophones). The likely actual source is `rk_scripts/10_deviant_stimuli.py`,
+whose entire job is to read the completed held-out generated pass and pull out
+the non-exact-match trials for teacher-forcing -- so whoever ran or reviewed
+that step necessarily saw these completions before today. **This is not a
+lapse in the held-out embargo**: `HANDOFF.md` names running `14_confirmatory.py`
+specifically as the one-way door. Compliance and deviation data were never
+under that embargo -- they have to be inspected between the generated and
+teacher-forced passes just to know which ~33 trials need forcing at all.
+
+### Per-concept deviation counts
+
+`information` alone accounts for 23 of the 33 held-out deviations (70%),
+across five different cells. Everything else is 1-2 trials each: `lightning`
+(2), `contraptions` (2), `bread` (2), `phones` (1), `fountains` (1), `memories`
+(1), `blood` (1).
+
+### The `information` collisions -- two distinct failure modes, both concept-specific
+
+**"Leave/de-emphasize X" reread as an instruction about content, not a frame
+around an arbitrary concept.** `I4` ("leave X out") deviated on **all 7 of 7**
+held-out carriers for `information`, and every completion silently truncates
+the target sentence -- literally leaving information out of it:
+
+    "The train arrived precisely on schedule."          -> "The train arrived."
+    "The basketball bounced off the rim."                -> "The basketball bounced."
+    "The chef garnished the plate with fresh herbs."     -> "The chef garnished the plate."
+    "The cat jumped onto the windowsill to watch birds." -> "The cat jumped onto the windowsill."
+    "Fragrant lilacs bloomed along the garden fence."     -> "Lilacs bloomed along the fence."
+
+`J3` ("de-emphasize X") + `information` shows the same logic in miniature:
+"The train arrived precisely on schedule." -> "The train arrived on schedule."
+(drops just "precisely").
+
+**"V information" parsed as a noun phrase ("information about V-ing"), not
+verb-plus-arbitrary-object.** `N4` ("braise X"), `N5` ("centrifuge X") and
+`Q3` ("vusk X") + `information` deviate a different way: the target sentence
+is copied correctly and in full, then the model appends an unrequested
+definition or meta-comment --
+
+    "...Braising is a combination cooking method using both dry and moist
+    heat. Typically"
+    "...**(Centrifuge Information - as requested, though irrelevant to the
+    task. This..."
+
+N4: 6 of 7 carriers deviate this way; N5: 7 of 7; Q3 (nonce, nothing real to
+define): 2 of 7, improvising a meta-comment about the task instead of a
+definition. In every one of these the primary task is completed correctly --
+the collision is additive, not corrupting.
+
+### The best non-`information` example: `contraptions` editing its own carrier
+
+`J3` ("de-emphasize X") and `H1` ("do not mention X"), both with `contraptions`,
+**both on carrier 5, independently**:
+
+    "The air conditioner hummed quietly in the background."
+      -> "The air hummed quietly in the background."
+
+An air conditioner is a contraption. Told to de-emphasize or not mention
+contraptions, the model edited its own carrier sentence to delete the word
+that most directly instantiates the concept -- "conditioner" -- twice,
+independently, under two different phrasings of the same cell family. Genuine
+semantic reasoning about carrier/concept overlap, not scaffold confusion.
+
+### Two more
+
+- **`blood`, `J3`** ("de-emphasize X"): writes the target correctly, then
+  breaks into self-narration -- `"...(I understand the request to de-emphasize
+  blood, but it wasn'"` -- cut off mid-explanation. Rare case of the model
+  talking about the instruction rather than complying or not.
+- **`memories`, `C4`** ("do not skip past X" -- toward-negated focus), carrier
+  "Fragrant lilacs bloomed along the garden fence": `"...my grandmother's
+  garden. The scent always took me back there."` Told to attend to memories,
+  paired with a carrier whose imagery is already a classic memory-trigger, it
+  produces an actual reminiscence. The deviation enacts the concept rather
+  than colliding with the phrasing.
+
+The remainder (`lightning` x2, `phones`, `fountains`, `bread` x2) are all `T3`
+filler-scaffold trials echoing "While you write it: . . . . . X." verbatim --
+the known, already-documented residual boundary confusion, not a semantic
+collision.
+
+**Full data, no commentary:** every non-compliant held-out trial (`generated`
+pass) with its full rendered prompt, target and completion is in
+`artifacts/runs/heldout1/confirmatory/noncompliant_generations.csv` (33 rows).
+Not committed -- `artifacts/` is gitignored per `CLAUDE.md`; this is a local
+data file, not a code artifact.
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

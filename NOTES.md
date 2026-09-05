@@ -1016,6 +1016,80 @@ Layer 16 is a reminder to read the means and not just the test: it "passes" Q0
 with A 1.75, T1 1.72, T7 1.57 — an ordering that holds on numbers too small to
 mean anything, with 3 of 10 concepts informative.
 
+## 2026-09-05 — The zeros are not spread evenly, and that decides what the analysis can test
+
+The positive control (2026-08-31) established that exact-`0.0` readouts are real
+measurements, not a dead instrument. This is the follow-on question, and the one
+that matters for the analysis: **which contrasts still have anything left to
+compare?** Measured on the **pilot only**, at the committed analysis layer 40,
+`latent_sum`, `token_mean`.
+
+    per-trial exactly zero            92.1%
+    per-concept-cell exactly zero     65.8%  (148 of 225)
+    concepts with any nonzero cell    9 of 9
+
+The marginal rate understates the problem, because the zeros are **not spread
+evenly across cells**. A paired contrast is uninformative for a concept when
+*both* its cells read zero — the difference is then structurally 0, contributing
+nothing while still consuming an n:
+
+| contrast | informative concepts (of 9) |
+|---|---|
+| Q0 `A − T7` | 9 |
+| Q3c `A − I` | 9 |
+| **Q3 `I − G`** — the PRIMARY | **5** |
+| Q5b `I − J` | 5 |
+| Q1 `T1 − L` | 3 |
+| Q4 `K − M` | 3 |
+| **Q5e `L − M`** | **2** |
+
+The pattern is coherent rather than random: cells that direct attention *toward*
+the concept (A, and T1's bare mention) activate its latents; the *away* and
+*declarative* cells largely do not. So the readout is most informative exactly
+where the design needs it least — establishing that mention works — and least
+informative where the fork's actual question lives.
+
+**Q5e is `irrelevant` vs `not relevant`**, the morphological-versus-syntactic
+comparison that motivates the whole fork, and it has two informative concepts of
+nine.
+
+Scaling to the held-out n=37 optimistically, the away-side contrasts would carry
+perhaps 8-12 informative concepts, which moves detectable dz from the registered
+~0.62 to somewhere above 1.0. Nothing in the design was powered for that.
+
+### The interpretive trap this sets
+
+Most contrasts will come back non-significant, and the available reading is
+*"instruction framing does not change internal representation."* That reading is
+not supported. The alternative — *"the readout is at floor and could not have
+detected a difference"* — predicts the same p-values, and the analysis as
+registered cannot separate them. A null from 2 informative concepts is not
+evidence of absence; it is absence of evidence, and the two must not be reported
+in the same voice.
+
+### Does 262k fix it?
+
+Probably not, and it is worth writing the prediction down before the money is
+spent. The positive control showed the selected 16k latents fire at 3,000-16,000
+on the concept's own tokens, so the 16k SAE **can** represent these concepts. The
+zeros therefore mean the concept is not active during the copying task, not that
+the decomposition is too coarse to see it. A finer decomposition catches weaker
+activation below the 16k threshold, so 262k may raise sensitivity at the margin —
+but it cannot manufacture activation that is not there. Expect an improvement in
+degree, not a fix.
+
+The nonzero values are also badly skewed — median 13.8, max 781, mean/median 3.9
+— so the surviving comparisons rest on a few large values and the paired t's
+standard deviation is set by two or three concepts. The BCa intervals will be
+wide, which is the honest outcome rather than a defect.
+
+### Consequence
+
+This has to be resolved **before** the held-out set is unblinded, since any rule
+chosen after seeing the contrast results is worthless. Options are under
+discussion; whatever is chosen goes in `PREREGISTRATION.md` as an amendment
+first. All numbers above are pilot-only.
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

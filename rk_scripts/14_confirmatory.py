@@ -167,6 +167,28 @@ def bca_ci(x: np.ndarray, kind: str = "mean", alpha: float = ALPHA,
     return (out[0], out[1])
 
 
+def informative(w: pd.DataFrame, cells: list[str]) -> tuple[int, float]:
+    """(concepts with any signal across `cells`, detectable dz at that n).
+
+    A concept whose readout is exactly 0.0 in EVERY cell of a contrast has a
+    structurally zero difference: it consumes an n while carrying no
+    information. With the SAE readout at 92% zeros those concepts dominate some
+    contrasts -- on the pilot, Q5e (`irrelevant` vs `not relevant`) had 2 of 9
+    informative -- so a non-significant result there is absence of evidence, not
+    evidence of absence.
+
+    detectable dz rescales the registered figure (0.60 at n=40, Holm across 15)
+    as 1/sqrt(n). It is an adjustment of a stated number, not a fresh power
+    calculation.
+    """
+    have = [c for c in cells if c in w.columns]
+    if not have:
+        return 0, float("nan")
+    sub = w[have].dropna(how="all")
+    n = int((sub.fillna(0).abs().sum(axis=1) > 0).sum())
+    return n, (round(0.60 * (40 / n) ** 0.5, 3) if n else float("nan"))
+
+
 def paired(w: pd.DataFrame, hi: str, lo: str, rng=None) -> dict:
     """Paired comparison of two cells across concepts."""
     if hi not in w.columns or lo not in w.columns:
@@ -179,11 +201,13 @@ def paired(w: pd.DataFrame, hi: str, lo: str, rng=None) -> dict:
     sd = x.std(ddof=1)
     lo_ci, hi_ci = bca_ci(x, "mean", rng=rng)
     dz_lo, dz_hi = bca_ci(x, "dz", rng=rng)
+    inf_n, inf_dz = informative(w, [hi, lo])
     return {"n": len(x), "mean_diff": float(x.mean()), "sd_diff": float(sd),
             "dz": float(x.mean() / sd) if sd > 0 else np.nan,
             "t": float(t), "p": float(p),
             "ci_lo": lo_ci, "ci_hi": hi_ci,
-            "dz_ci_lo": dz_lo, "dz_ci_hi": dz_hi}
+            "dz_ci_lo": dz_lo, "dz_ci_hi": dz_hi,
+            "informative_n": inf_n, "detectable_dz": inf_dz}
 
 
 def paired_mean_of(w: pd.DataFrame, pairs: list[tuple[str, str]],
@@ -202,9 +226,11 @@ def paired_mean_of(w: pd.DataFrame, pairs: list[tuple[str, str]],
     t, p = stats.ttest_1samp(x, 0.0)
     sd = x.std(ddof=1)
     lo_ci, hi_ci = bca_ci(x, "mean", rng=rng)
+    inf_n, inf_dz = informative(w, [c for pr in pairs for c in pr])
     return {"n": len(x), "mean_diff": float(x.mean()), "sd_diff": float(sd),
             "dz": float(x.mean() / sd) if sd > 0 else np.nan,
-            "t": float(t), "p": float(p), "ci_lo": lo_ci, "ci_hi": hi_ci}
+            "t": float(t), "p": float(p), "ci_lo": lo_ci, "ci_hi": hi_ci,
+            "informative_n": inf_n, "detectable_dz": inf_dz}
 
 
 def paired_interaction(w: pd.DataFrame, a: str, b: str, c: str, d: str,
@@ -241,8 +267,10 @@ def omnibus(w: pd.DataFrame, cells: list[str]) -> dict:
         return {"n": len(sub), "note": f"need 3+ cells and concepts, "
                                       f"have {len(have)}/{len(sub)}"}
     chi2, p = stats.friedmanchisquare(*[sub[c].to_numpy(float) for c in have])
+    inf_n, inf_dz = informative(w, have)
     return {"n": len(sub), "k_cells": len(have), "chi2": float(chi2),
-            "p": float(p), "cells": have}
+            "p": float(p), "cells": have,
+            "informative_n": inf_n, "detectable_dz": inf_dz}
 
 
 def holm(pvals: dict[str, float], alpha: float = ALPHA) -> dict[str, dict]:
@@ -261,16 +289,38 @@ def holm(pvals: dict[str, float], alpha: float = ALPHA) -> dict[str, dict]:
     return out
 
 
+MIN_INFORMATIVE = 15   # see PREREGISTRATION.md amendment 2026-09-05
+
+
+def verdict(r: dict, alpha: float = ALPHA) -> str:
+    """What a result is licensed to claim, given how much signal it had.
+
+    Registered 2026-09-05, before unblinding: a non-significant contrast may be
+    reported as a null only if it had enough informative concepts to detect a
+    large effect. Below that it is UNDERPOWERED -- absence of evidence.
+    """
+    p, n = r.get("p"), r.get("informative_n")
+    if p is None or n is None:
+        return ""
+    if p < alpha:
+        return "significant"
+    return "null" if n >= MIN_INFORMATIVE else "UNDERPOWERED (not a null)"
+
+
 def fmt(r: dict) -> str:
     if r.get("note"):
         return f"n={r.get('n', 0)}  {r['note']}"
+    inf = ""
+    if r.get("informative_n") is not None:
+        inf = (f"  informative={r['informative_n']}"
+               f" (detectable dz {r['detectable_dz']})  [{verdict(r)}]")
     if "chi2" in r:
         return (f"n={r['n']}  k={r['k_cells']}  chi2={r['chi2']:.2f}  "
-                f"p={r['p']:.4g}")
+                f"p={r['p']:.4g}{inf}")
     ci = (f"[{r['ci_lo']:.4g}, {r['ci_hi']:.4g}]"
           if np.isfinite(r.get("ci_lo", np.nan)) else "[--]")
     return (f"n={r['n']}  diff={r['mean_diff']:.4g}  dz={r['dz']:.3f}  "
-            f"95%CI {ci}  p={r['p']:.4g}")
+            f"95%CI {ci}  p={r['p']:.4g}{inf}")
 
 
 # --------------------------------------------------------------- contrasts ---

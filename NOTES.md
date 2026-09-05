@@ -1090,6 +1090,164 @@ chosen after seeing the contrast results is worthless. Options are under
 discussion; whatever is chosen goes in `PREREGISTRATION.md` as an amendment
 first. All numbers above are pilot-only.
 
+## 2026-09-05 — Independent review of the two flagged implementation decisions
+
+`14_confirmatory.py`'s docstring flags two decisions as unregistered implementation
+choices needing sign-off: the family-combination rule (`FAMILY_RULE`) and
+`MIN_INFORMATIVE = 15`. Reviewed before the held-out set was touched. Both were
+accepted as sound in their core approach, each had one gap worth fixing, and
+both fixes below are now implemented in `14_confirmatory.py` and amended into
+`PREREGISTRATION.md` — still before the held-out set is unblinded, so neither
+required re-deriving anything already committed.
+
+### The combination rule can hide a sign-flipped interaction
+
+`paired_mean_of` (Q3c, Q5b, Q5c, Q5f) tests the *average* of two per-concept
+differences — mathematically the marginal main effect when the two comparisons
+are the same factor contrast at two levels of another factor (e.g. Q5c: negation
+composition, averaged over imperative vs. declarative frame). That is a standard
+and correct way to test a main effect, and every sub-comparison is already
+printed individually.
+
+The gap: averaging is exactly the operation that **cancels an interaction**. If,
+say, `C vs D` (Q5c, imperative) and `E vs F` (declarative) are each individually
+significant but in *opposite* directions, the family-level Q5c number — the one
+that is Holm-corrected and gets called significant/null — can come back null by
+cancellation, while the two sub-comparisons underneath tell a genuinely
+different story. Q5 and Q5d already carry an explicit interaction contrast
+(`paired_interaction`) for exactly this reason; Q3c, Q5b, Q5c and Q5f do not,
+and there is no principled reason the four "mean" members should be exempt from
+the same check the two "omnibus" members get.
+
+**Fix, implemented:** `paired_interaction` added for Q3c, Q5b, Q5c and Q5f,
+reported alongside the existing sub-comparisons as a diagnostic. It is
+explicitly **not** added to `FAMILY` — the Holm-corrected family stays at 15
+members, untouched — so this closes the gap without reopening anything already
+committed. Smoke-tested on `pilot2` (n=9, `--ignore-gate`): all four now print
+their interaction line, e.g. Q5f's `interaction_(A-D)-(B-F)` at dz=1.191,
+p=0.007 — consistent with its two sub-comparisons (dz 1.154 and 0.380) pointing
+the same direction rather than canceling, which is the reassuring case, not the
+one the fix was written to catch.
+
+### `MIN_INFORMATIVE = 15`: the arithmetic is right, the approximation is mildly optimistic
+
+Checked by hand: solving `0.60 * sqrt(40/n) = 1.0` gives n ≈ 14.4, so 15 is
+exactly the smallest integer at which the stated rule — rescaling the
+registered detectable-dz figure by `1/sqrt(n)` — crosses from "cannot detect
+even a dz-1.0 effect" (n=14, required dz ≈ 1.014) to "can" (n=15, required dz ≈
+0.980). The threshold is not a round-number guess; it is the correct integer
+boundary for the formula as written.
+
+The formula itself, though, is a normal (z) approximation to what is really a
+small-sample (noncentral-t) power problem. At n=15 the relevant t-distribution
+has only 14 degrees of freedom, where its tails are noticeably fatter than the
+normal approximation assumes — so the *true* required dz to detect a "large"
+effect at n=15 is probably somewhat above 1.0, meaning the real crossover n is
+likely a couple of concepts higher than 15 (rough estimate: 17-18, not derived
+exactly here). Since the entire purpose of this rule is to avoid overclaiming a
+null under the floor effect, an approximation that is mildly anti-conservative
+works against the rule's own goal.
+
+**Fix, implemented:** the `1/sqrt(n)` rescaling is replaced with an exact
+noncentral-t power calculation (`scipy.stats.nct` + `brentq`), at the same
+Holm-worst-case alpha (0.05/15) and 80% power. The rough estimate above was
+close: the exact crossover is **n = 19**, not 15. Sanity checks against the
+approximation, both confirming the predicted direction (exact ≥ approximate,
+gap widening as n shrinks):
+
+| n | approx (1/sqrt(n) of 0.60 @ n=40) | exact |
+|---|---|---|
+| 40 | 0.600 | 0.632 |
+| 19 | 0.870 | 0.986 |
+| 15 | 0.980 | 1.155 |
+
+`MIN_INFORMATIVE` is now derived, not hardcoded — `next(n for n in range(3, 100)
+if detectable_dz(n) <= 1.0)` — so it cannot silently drift out of sync with
+`detectable_dz`'s own formula again. This can only move the threshold up
+relative to the old value, never down, so it is a strictly more conservative
+version of the same rule, not a new one. Stated explicitly in the writeup,
+independent of the exact cutoff: clearing the threshold licenses "no effect at
+least this large," never "no effect," since `detectable_dz` is reported for
+every contrast regardless of verdict.
+
+Both fixes are recorded as a dated amendment in `PREREGISTRATION.md`
+(2026-09-05, alongside this note) before the held-out set is unblinded, per the
+project's own rule that methodology decisions are committed before the data
+that would be affected by them. Neither touches the Q0 gate or any text already
+committed there.
+
+## 2026-09-05 — `--hybrid-compliant`: a third variant, built from data already on disk
+
+Clarified the intent behind restricting held-out teacher-forcing to deviating
+trials (2026-08-31 amendment): the surprisal quantities it was originally
+written down for (forced-token surprisal, stop surprisal) are a method-validity
+check and feed no confirmatory contrast, but the *activations* captured during
+that same forced pass were meant to double as substitutes for the trials
+`--compliant-only` would otherwise drop — this was never actually implemented
+or written down as its own mode.
+
+**No new measurement needed.** Checked `artifacts/runs/heldout1/teacher_forced/results/`:
+both readout parquets (SAE, concept-vector) already exist, covering all 33
+deviant `prompt_group`s at all four layers and both poolings — confirmed by
+cross-referencing against the generated pass that every one of those 33 was
+`exact_match = False` there and `True` in the teacher-forced pass. The measure
+stage is CPU-only (reads stored activations, no model), so this is a pure merge
+of two already-computed files, no GPU or pod required.
+
+**Implemented** as `--hybrid-compliant` in `14_confirmatory.py`: for each
+`prompt_group`, keep the generated row unless it deviated, in which case swap
+in the matching teacher-forced row (falling back to the generated,
+non-compliant value with a printed warning if no substitute exists at that
+layer/pooling/readout — did not occur on held-out, all 33 have one). Mutually
+exclusive with `--compliant-only`; requires the default `--pass generated`.
+Smoke-tested on `pilot2` (`--ignore-gate`, since pilot's n=9 can't power the
+gate): 1 trial substituted, 0 left without a match, ran cleanly end to end.
+
+Distinct from `--compliant-only` in the direction that matters for the
+`informative_n` fix below: `--compliant-only` *drops* trials and can shrink a
+concept out of a cell entirely if every trial for that cell happened to
+deviate, which is exactly the scenario where the counting mismatch could bite.
+`--hybrid-compliant` *substitutes* instead of dropping, so no concept is ever
+lost and that scenario cannot arise within this mode. Recorded as a
+`PREREGISTRATION.md` amendment (2026-09-05) before the held-out set is
+unblinded; reported as a second robustness check alongside `--compliant-only`,
+not a replacement for the primary (all-trials) analysis.
+
+## 2026-09-05 — `informative_n` fixed to match the test it describes
+
+The counting bug flagged in review (a concept missing one side of a comparison
+could still be counted "informative" if its other side was present and
+nonzero, because `informative()` filled the missing side with `0` before
+checking) is fixed, ahead of running `--compliant-only` on held-out where it
+was live rather than hypothetical: unlike the primary readout (where a
+concept's missingness is uniform across every cell, so the bug was inert),
+`--compliant-only` filters per (concept, cell) independently and can leave one
+side of a pair present while the other is missing.
+
+**Fix:** `informative()` now requires a complete case across the cells being
+compared (`dropna()`, no `fillna`), exactly matching what `paired()`'s
+`(w[hi] - w[lo]).dropna()` and `omnibus()`'s `w[have].dropna()` already
+require — so `informative_n` can no longer exceed the n the underlying test
+actually used.
+
+**Verified with a synthetic case** before touching any real data: concept X
+present on one side only (5.0, NaN), Y present and nonzero on both (3.0, 2.0),
+Z present and exactly zero on both (0.0, 0.0). Old code counted X and Y as
+informative (2) — wrongly including X, which `paired()` drops entirely since
+subtracting through its NaN gives NaN. New code counts only Y (1), the single
+concept that is both present everywhere and actually informative; Z is
+correctly excluded (present, but a real zero difference) while still counting
+toward the test's own n of 2 the way the pre-registration's `informative_n`
+concept always intended.
+
+**Re-ran all four pilot smoke tests after the fix** (primary, `--compliant-only`,
+`--hybrid-compliant`, `concept_vector`): every `informative_n` and `detectable_dz`
+printed identically to before the fix. Expected and reassuring, not a null
+result about the fix — pilot's SAE missingness is entirely concept-level
+(`k=0` at latent selection, never per-cell), so the bug had no live case to
+correct there; it was always specifically a `--compliant-only`-on-held-out risk,
+which is exactly why it's being closed before that run rather than after.
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

@@ -13,7 +13,11 @@ Fixed by the pre-registration and by the Stage 2 commits:
   layer              40                      (commit b54ee96)
   pooling            token_mean              (commit 61ab4f2)
   trials             ALL, not compliant-only. Compliant-only is the registered
-                     robustness check (--compliant-only).
+                     robustness check (--compliant-only). --hybrid-compliant is
+                     a second, non-registered variant added 2026-09-05 (see
+                     PREREGISTRATION.md amendment same date): it substitutes
+                     the teacher-forced activations for trials that deviated,
+                     rather than dropping them, so n is never reduced.
   statistics         paired t, alpha = .05 two-sided; dz = mean(d)/sd(d);
                      BCa bootstrap CI over concepts, 10,000 resamples;
                      Holm across the 15-member family.
@@ -28,6 +32,7 @@ That is what makes the family 15 rather than 18.
 
     python3 rk_scripts/14_confirmatory.py --run-id heldout1
     python3 rk_scripts/14_confirmatory.py --run-id heldout1 --compliant-only
+    python3 rk_scripts/14_confirmatory.py --run-id heldout1 --hybrid-compliant
     python3 rk_scripts/14_confirmatory.py --run-id heldout1 --readout concept_vector
 """
 
@@ -40,6 +45,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy import stats
+from scipy.optimize import brentq
 
 from irc.paths import RUNS
 
@@ -80,7 +86,15 @@ CELL = {
 #              repeated-measures one-way test across those cells (Friedman,
 #              which needs no sphericity assumption). Q5, Q5d, Q7, Q8.
 #
-# THIS NEEDS SIGN-OFF before the numbers are treated as confirmatory.
+# CAVEAT, reviewed 2026-09-05 before unblinding (PREREGISTRATION.md amendment
+# same date): averaging is exactly the operation that cancels a sign-flipped
+# interaction. Q5 and Q5d already carried an explicit 2x2 interaction contrast
+# for this reason; the four "mean" members did not, so a member could read
+# null by cancellation while both of its sub-comparisons are individually
+# significant in opposite directions, with nothing to flag it. Fixed below:
+# Q3c, Q5b, Q5c and Q5f now each also report the same `paired_interaction`
+# diagnostic, printed alongside the sub-comparisons -- NOT added to FAMILY, so
+# the Holm-corrected family stays at 15 members. See NOTES.md 2026-09-05.
 FAMILY_RULE = "documented in the module docstring; see FAMILY_RULE comment"
 
 N_BOOT = 10_000
@@ -167,6 +181,47 @@ def bca_ci(x: np.ndarray, kind: str = "mean", alpha: float = ALPHA,
     return (out[0], out[1])
 
 
+TARGET_POWER = 0.80   # matches the pre-registration's own dz-0.46-at-n=40 figure
+FAMILY_SIZE = 15      # Holm family size; asserted against `FAMILY` below
+HOLM_WORST_ALPHA = ALPHA / FAMILY_SIZE  # smallest per-test alpha under Holm --
+                                        # the "worst case" the pre-registration's
+                                        # own power statement already uses
+
+
+def _paired_power(dz: float, n: int, alpha: float) -> float:
+    """Exact two-sided power of a paired (one-sample) t-test at effect size dz."""
+    df = n - 1
+    t_crit = stats.t.ppf(1 - alpha / 2, df)
+    nc = dz * np.sqrt(n)
+    upper = stats.nct.sf(t_crit, df, nc)
+    lower = stats.nct.cdf(-t_crit, df, nc)
+    if not np.isfinite(lower):
+        lower = 0.0   # underflows to nan far in the tail; true value is ~0
+    return float(upper + lower)
+
+
+def detectable_dz(n: int, alpha: float = HOLM_WORST_ALPHA,
+                  power: float = TARGET_POWER) -> float:
+    """Smallest dz detectable at `power`, exact noncentral-t (df = n-1).
+
+    Reviewed and fixed 2026-09-05, before unblinding (see NOTES.md and the
+    PREREGISTRATION.md amendment of the same date). Replaces a 1/sqrt(n)
+    rescaling of the registered n=40 figure (dz 0.60) -- that was a normal
+    (z) approximation to a small-sample power problem, and it runs mildly
+    optimistic: even at n=40 it understates the exact worst-case figure
+    (0.60 approx vs. 0.632 exact), and the gap widens as n shrinks, which is
+    the direction that matters here since the floor effect is what pushes n
+    down in the first place. This can only move estimates up (more
+    conservative), never down.
+    """
+    if n < 3:
+        return float("nan")
+    if _paired_power(3.0, n, alpha) < power:
+        return float("nan")  # not attainable in a sane range; shouldn't happen
+    return round(brentq(lambda dz: _paired_power(dz, n, alpha) - power,
+                        1e-4, 3.0), 4)
+
+
 def informative(w: pd.DataFrame, cells: list[str]) -> tuple[int, float]:
     """(concepts with any signal across `cells`, detectable dz at that n).
 
@@ -177,16 +232,30 @@ def informative(w: pd.DataFrame, cells: list[str]) -> tuple[int, float]:
     informative -- so a non-significant result there is absence of evidence, not
     evidence of absence.
 
-    detectable dz rescales the registered figure (0.60 at n=40, Holm across 15)
-    as 1/sqrt(n). It is an adjustment of a stated number, not a fresh power
-    calculation.
+    detectable dz is the exact power calculation above, at the Holm worst-case
+    alpha for this family and 80% power.
+
+    Fixed 2026-09-05, before unblinding: a concept now counts as informative
+    only if it is a COMPLETE case across `cells` (`dropna()`, no missing side),
+    matching exactly what `paired()`'s `(w[hi] - w[lo]).dropna()` and
+    `omnibus()`'s `w[have].dropna()` already require. The previous version used
+    the looser `dropna(how="all")` plus `fillna(0)`, which could count a
+    concept as informative from a single present, nonzero cell even when its
+    OTHER cell was missing (not measured-zero) -- inflating informative_n
+    above the n the underlying test actually used. For the primary readout
+    this cannot occur (a k=0 concept's latent selection is missing at EVERY
+    cell for that concept, never just one), so this changes nothing there; it
+    only matters where a concept can be missing in one cell but not another,
+    which --compliant-only can produce by filtering out all of a cell's
+    trials for one concept while leaving a paired cell untouched. See
+    NOTES.md 2026-09-05.
     """
     have = [c for c in cells if c in w.columns]
     if not have:
         return 0, float("nan")
-    sub = w[have].dropna(how="all")
-    n = int((sub.fillna(0).abs().sum(axis=1) > 0).sum())
-    return n, (round(0.60 * (40 / n) ** 0.5, 3) if n else float("nan"))
+    sub = w[have].dropna()
+    n = int((sub.abs().sum(axis=1) > 0).sum())
+    return n, (detectable_dz(n) if n else float("nan"))
 
 
 def paired(w: pd.DataFrame, hi: str, lo: str, rng=None) -> dict:
@@ -289,7 +358,11 @@ def holm(pvals: dict[str, float], alpha: float = ALPHA) -> dict[str, dict]:
     return out
 
 
-MIN_INFORMATIVE = 15   # see PREREGISTRATION.md amendment 2026-09-05
+# see PREREGISTRATION.md amendment 2026-09-05: the smallest n at which
+# detectable_dz(n) reaches a "large effect" (dz <= 1.0), by exact power. Was a
+# hardcoded 15 from a 1/sqrt(n) approximation; recomputed here 2026-09-05 to
+# 19, before unblinding -- see `detectable_dz`'s docstring for why.
+MIN_INFORMATIVE = next(n for n in range(3, 100) if detectable_dz(n) <= 1.0)
 
 
 def verdict(r: dict, alpha: float = ALPHA) -> str:
@@ -298,6 +371,8 @@ def verdict(r: dict, alpha: float = ALPHA) -> str:
     Registered 2026-09-05, before unblinding: a non-significant contrast may be
     reported as a null only if it had enough informative concepts to detect a
     large effect. Below that it is UNDERPOWERED -- absence of evidence.
+    `MIN_INFORMATIVE` itself was recomputed the same day by exact power (see
+    `detectable_dz`); this rule is otherwise unchanged.
     """
     p, n = r.get("p"), r.get("informative_n")
     if p is None or n is None:
@@ -367,7 +442,9 @@ def run_contrasts(w: pd.DataFrame, wp: pd.DataFrame, rng) -> dict:
                   "test": paired_mean_of(w, [(C["A"], C["I"]),
                                              (C["B"], C["K"])], rng),
                   "_sub": {"A_vs_I": paired(w, C["A"], C["I"], rng),
-                           "B_vs_K": paired(w, C["B"], C["K"], rng)}}
+                           "B_vs_K": paired(w, C["B"], C["K"], rng),
+                           "interaction_(A-I)-(B-K)": paired_interaction(
+                               w, C["A"], C["I"], C["B"], C["K"], rng)}}
     out["Q4"] = {"kind": "pair", "test": paired(w, C["K"], C["M"], rng)}
     out["Q5"] = {"kind": "omnibus",
                  "test": omnibus(w, [C["G"], C["I"], C["K"], C["M"]]),
@@ -383,12 +460,16 @@ def run_contrasts(w: pd.DataFrame, wp: pd.DataFrame, rng) -> dict:
                   "test": paired_mean_of(w, [(C["I"], C["J"]),
                                              (C["K"], C["L"])], rng),
                   "_sub": {"I_vs_J": paired(w, C["I"], C["J"], rng),
-                           "K_vs_L": paired(w, C["K"], C["L"], rng)}}
+                           "K_vs_L": paired(w, C["K"], C["L"], rng),
+                           "interaction_(I-J)-(K-L)": paired_interaction(
+                               w, C["I"], C["J"], C["K"], C["L"], rng)}}
     out["Q5c"] = {"kind": "mean",
                   "test": paired_mean_of(w, [(C["C"], C["D"]),
                                              (C["E"], C["F"])], rng),
                   "_sub": {"C_vs_D": paired(w, C["C"], C["D"], rng),
-                           "E_vs_F": paired(w, C["E"], C["F"], rng)}}
+                           "E_vs_F": paired(w, C["E"], C["F"], rng),
+                           "interaction_(C-D)-(E-F)": paired_interaction(
+                               w, C["C"], C["D"], C["E"], C["F"], rng)}}
     out["Q5d"] = {"kind": "omnibus",
                   "test": omnibus(w, [C["A"], C["B"], C["C"], C["E"]]),
                   "note": "frame x negation, focus side",
@@ -404,7 +485,9 @@ def run_contrasts(w: pd.DataFrame, wp: pd.DataFrame, rng) -> dict:
                   "test": paired_mean_of(w, [(C["A"], C["D"]),
                                              (C["B"], C["F"])], rng),
                   "_sub": {"A_vs_D": paired(w, C["A"], C["D"], rng),
-                           "B_vs_F": paired(w, C["B"], C["F"], rng)}}
+                           "B_vs_F": paired(w, C["B"], C["F"], rng),
+                           "interaction_(A-D)-(B-F)": paired_interaction(
+                               w, C["A"], C["D"], C["B"], C["F"], rng)}}
     out["Q6"] = {"kind": "pair", "test": paired(w, C["H"], C["G"], rng)}
     out["Q7"] = {"kind": "omnibus",
                  "test": omnibus(w, [C["I"], C["N"], C["P"], C["Q"], C["R"],
@@ -448,6 +531,9 @@ def run_contrasts(w: pd.DataFrame, wp: pd.DataFrame, rng) -> dict:
 
 FAMILY = ["Q1", "Q2", "Q3", "Q3b", "Q3c", "Q4", "Q5", "Q5b", "Q5c", "Q5d",
           "Q5e", "Q5f", "Q6", "Q7", "Q8"]
+assert len(FAMILY) == FAMILY_SIZE, (
+    "FAMILY_SIZE (the Holm worst-case denominator used by detectable_dz) must "
+    "match len(FAMILY)")
 
 
 def main() -> None:
@@ -462,6 +548,15 @@ def main() -> None:
     ap.add_argument("--latents-version", default="v2")
     ap.add_argument("--compliant-only", action="store_true",
                     help="registered robustness check; primary is ALL trials")
+    ap.add_argument("--hybrid-compliant", action="store_true",
+                    help="substitute the teacher-forced activations for "
+                         "trials that deviated in the generated pass, instead "
+                         "of dropping them -- full n preserved, every trial "
+                         "compliant either naturally or by force. Requires "
+                         "--pass generated (the default) and a matching "
+                         "teacher_forced readout parquet. Mutually exclusive "
+                         "with --compliant-only. See PREREGISTRATION.md "
+                         "amendment 2026-09-05.")
     ap.add_argument("--layer", type=int, default=None,
                     help="default: from stage2_values.json")
     ap.add_argument("--pooling", default=None,
@@ -475,6 +570,14 @@ def main() -> None:
                     help="bootstrap resamples; lower only for smoke tests")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
+
+    if args.compliant_only and args.hybrid_compliant:
+        raise SystemExit("--compliant-only and --hybrid-compliant are "
+                         "mutually exclusive")
+    if args.hybrid_compliant and args.pass_ != "generated":
+        raise SystemExit("--hybrid-compliant substitutes INTO the generated "
+                         "pass; it does not make sense with --pass "
+                         f"{args.pass_!r}")
 
     # --- Stage 2 values come from the committed record, not from flags ---
     s2p = REPO_ROOT / "stage2_values.json"
@@ -505,10 +608,44 @@ def main() -> None:
             & (df.pooling == pooling) & (df.readout == readout_name)]
     if args.compliant_only:
         df = df[df.exact_match]
+
+    n_substituted = n_unsubstituted = 0
+    if args.hybrid_compliant:
+        # Substitute the teacher-forced row for every trial that deviated in
+        # the generated pass, rather than dropping it. On a compliant trial
+        # forced == generated (bit-identical, verified in PREREGISTRATION.md),
+        # so this changes nothing there; it only touches the trials
+        # --compliant-only would otherwise have thrown away, and it never
+        # shrinks n. See PREREGISTRATION.md amendment 2026-09-05.
+        tf_path = RUNS / args.run_id / "teacher_forced" / "results" / path.name
+        if not tf_path.exists():
+            raise SystemExit(f"missing {tf_path} -- run rk_scripts/09_measure.py "
+                             "--pass teacher_forced")
+        tf = pd.read_parquet(tf_path)
+        tf = tf[(tf.split == args.split) & (tf.layer == layer)
+                & (tf.pooling == pooling) & (tf.readout == readout_name)]
+
+        deviant = set(df.loc[~df.exact_match, "prompt_group"])
+        have_substitute = deviant & set(tf.prompt_group)
+        no_substitute = deviant - have_substitute
+        n_substituted, n_unsubstituted = len(have_substitute), len(no_substitute)
+        if no_substitute:
+            print(f"  WARNING: {n_unsubstituted} deviant prompt_group(s) have "
+                  f"no teacher-forced row at this layer/pooling/readout -- "
+                  f"kept as their (non-compliant) generated value: "
+                  f"{sorted(no_substitute)[:5]}"
+                  f"{' ...' if n_unsubstituted > 5 else ''}")
+
+        df = pd.concat([df[~df.prompt_group.isin(have_substitute)],
+                        tf[tf.prompt_group.isin(have_substitute)]],
+                       ignore_index=True)
+
+    label = ("  [COMPLIANT-ONLY robustness check]" if args.compliant_only
+             else f"  [HYBRID-COMPLIANT: {n_substituted} trial(s) "
+                  f"substituted, {n_unsubstituted} left non-compliant]"
+             if args.hybrid_compliant else "  [all trials, as registered]")
     print(f"{path.name}: {len(df):,} rows, {df.concept.nunique()} concepts, "
-          f"{df.cell_id.nunique()} cells"
-          + ("  [COMPLIANT-ONLY robustness check]" if args.compliant_only
-             else "  [all trials, as registered]"))
+          f"{df.cell_id.nunique()} cells{label}")
     if df.empty:
         raise SystemExit("no rows after filtering -- check layer/pooling/readout")
 
@@ -546,7 +683,11 @@ def main() -> None:
         if args.out:
             args.out.write_text(json.dumps(
                 {"gate": q0, "gate_failed": True, "layer": layer,
-                 "pooling": pooling, "readout": readout_name}, indent=1,
+                 "pooling": pooling, "readout": readout_name,
+                 "compliant_only": args.compliant_only,
+                 "hybrid_compliant": args.hybrid_compliant,
+                 "n_substituted": n_substituted,
+                 "n_unsubstituted": n_unsubstituted}, indent=1,
                 default=str))
         if not args.ignore_gate:
             raise SystemExit(1)
@@ -591,6 +732,9 @@ def main() -> None:
         args.out.write_text(json.dumps(
             {"layer": layer, "pooling": pooling, "readout": readout_name,
              "split": args.split, "compliant_only": args.compliant_only,
+             "hybrid_compliant": args.hybrid_compliant,
+             "n_substituted": n_substituted,
+             "n_unsubstituted": n_unsubstituted,
              "n_concepts": int(w.shape[0]), "family": FAMILY,
              "holm": adj, "results": results,
              "family_combination_rule": FAMILY_RULE}, indent=1, default=str))

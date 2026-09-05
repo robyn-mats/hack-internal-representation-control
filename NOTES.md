@@ -1336,14 +1336,27 @@ question, not part of the 15-test family:
 | **Observed (CV, n=40)** | **reduces** (dz -1.05, p<.0001) | **reduces** (dz -0.84, p<.0001) | **reduces** (dz -1.46, p<.0001) | **reduces** (dz -1.37, p<.0001) | **elevates** (dz +0.69, p<.0001) |
 | Observed (SAE) | n.s., underpowered (inf=16) | n.s., underpowered (inf=14) | n.s., underpowered (inf=11) | n.s., underpowered (inf=11) | elevates, p=.03 (inf=20 -- the one cell SAE can speak to) |
 
-No row matches cleanly. "Mental verbs unactionable" is closest (4 of 5 -- I,
-K, M reduce and C elevates as predicted) but still gets G wrong, and G is the
-one cell **every** row agrees should fail to move. Instead G reduces about as
-strongly as anything in the table. `C` is the cell `PLAN.md` says "separates
-row 1 from row 4," and it's also the one place SAE and concept-vector agree
-(both elevate). Bottom line: the pattern doesn't cleanly support any single
-pre-registered mechanism; the biggest anomaly is G's unpredicted reduction,
-not a clean win for one hypothesis over another.
+No row matches cleanly -- but the reason matters more than the mismatch
+itself, and the first pass at this (above) undersold it. **All four rows
+predict `G` fails to move, because that's not an independent prediction each
+hypothesis makes -- it's Anthropic's own original finding, the fact all four
+hypotheses exist to explain.** They differ only on *why* "do not think about
+X" (`G`) fails to suppress while "X is beside the point" / "X is not
+relevant" (`K`/`M`) do. Here, `G` doesn't fail -- it reduces about as strongly
+as `K` and `M` do (dz -1.05 vs. -1.46 and -1.37). So "no row matches" isn't
+four viable mechanisms all missing an ambiguous target; it's that the target
+itself -- the asymmetry every one of these hypotheses was built to explain --
+didn't replicate on this held-out data. Reporting it as "which of four
+mechanisms fits best" (as the first pass here did) is the wrong frame: the
+real finding is upstream of all four rows, and is a model-family or
+instrument question rather than a choice among them --
+**why does "don't think about X" fail to suppress on Claude but suppress on
+Gemma?** `C` is still worth noting on its own terms (the cell `PLAN.md` says
+"separates row 1 from row 4," and the one place SAE and concept-vector agree,
+both elevating), but it doesn't rescue the four-hypothesis framing once the
+shared premise is gone. Caught in review of the results page's visualization
+of this table, not found independently in the text first -- recorded here so
+the two accounts don't disagree.
 
 ### Q2's surprise: candidate explanations, and the dilution checks
 

@@ -1548,6 +1548,40 @@ pass) with its full rendered prompt, target and completion is in
 Not committed -- `artifacts/` is gitignored per `CLAUDE.md`; this is a local
 data file, not a code artifact.
 
+## 2026-09-05 -- Q7: nonsense instructions suppress, they don't elevate (not pre-registered as directional, and it goes against the natural intuition)
+
+Building out the results page's coherence-gradient chart raised a question
+worth checking properly: does an *unnegated* nonsense or incongruent
+instruction ("juggle X," "glorf X") behave like a focus instruction, on the
+theory that "concentrate on X" isn't a literal external action either, so
+maybe just being told to *do something* with the concept is what elevates it,
+independent of whether the something makes sense?
+
+Checked directly against the per-cell dz-vs-T1 numbers already computed for
+the dilution investigation (concept-vector, layer 40):
+
+| cell | dz vs. T1 | p |
+|---|---|---|
+| A -- concentrate on X | **+1.995** | 2.4e-15 |
+| N -- juggle X (unnegated) | **-0.934** | 6.9e-7 |
+| P -- do not juggle X | -1.329 | 2.7e-10 |
+| Q -- glorf X (unnegated) | **-1.182** | 4.8e-9 |
+| R -- do not glorf X | -1.232 | 1.8e-9 |
+| S -- X is glorfy to this task | -1.408 | 6.1e-11 |
+
+Not close. N and Q -- the two unnegated cells, the ones the "any instruction
+to do something" theory predicts should pattern with A -- suppress just as
+reliably as their negated counterparts (P, R) and the nonce declarative (S),
+all five clustering with the away/filler cells rather than anywhere near A's
++2.0. `PREREGISTRATION.md` lists Q7's direction as explicitly not predicted,
+so this isn't a registered miss, but it does contradict the natural
+expectation going in: the mere shape of "an instruction asking the model to
+do something with X" is not what elevates a concept -- genuinely toward-coded
+framing is, and nonsense doesn't borrow any of that by resembling an
+imperative. Folded into the results page's coherence-gradient write-up
+(moved into "genuinely surprising" accordingly) rather than left as "fills a
+design gap," which undersold it.
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.

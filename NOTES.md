@@ -1296,16 +1296,20 @@ add a new confirmatory claim.
   reduction. SAE can't corroborate (underpowered: informative=16/37). See the
   dedicated section below — this is largely explained away by dilution on
   closer inspection.
-- **Q5b** (negation: I/J, K/L) — corrected 2026-09-05 (see below): within each
-  frame, the negation-free away cell out-suppresses its morphologically-negated
-  counterpart -- `I` ("set X aside"/"ignore X") beats `J` ("disregard X") as an
-  imperative, `K` ("X is beside the point") beats `L` ("X is irrelevant to this
-  task") as a declarative (dz -0.46 averaged, Holm-significant on
-  concept-vector). `L`, not `J`, is Anthropic's actual "ignore" condition (their
-  only away-instruction, a declarative); `I` and `J` are both imperative forms
-  they never tested. Cross-frame, `L` still out-suppresses `I` overall
-  (dz -1.31 vs -0.84) -- frame matters more than negation type here, so this
-  is not a case of the untested cell beating the measured one.
+- **Q5b** (negation: I/J, K/L) — corrected twice on 2026-09-05 (see below):
+  negation's cost here is frame-dependent, not uniform. `I` ("set X
+  aside"/"ignore X") out-suppresses `J` ("disregard X") as an imperative,
+  checked directly (dz -0.49, p=.004) -- but `K` ("X is beside the point") and
+  `L` ("X is irrelevant to this task") are statistically indistinguishable as
+  declaratives, also checked directly (dz -0.02, p=.92). The averaged Q5b
+  contrast is still Holm-significant overall (dz -0.46), but that's entirely
+  the imperative pair carrying it; morphological negation costs nothing on the
+  declarative side. `L`, not `J`, is Anthropic's actual "ignore" condition
+  (their only away-instruction, a declarative); `I` and `J` are both imperative
+  forms they never tested. Cross-frame, checked directly: `L` still
+  out-suppresses `I` (dz -0.57, p<.001) -- frame, not negation type, is doing
+  that work, so this is not a case of the untested cell beating the measured
+  one.
 - **Q5f** (double negation vs none) — "do not disregard X" (logically
   equivalent to "concentrate on X") reads well below the plain positive
   phrasing on both readouts (dz 0.66 SAE, 1.79 CV). Negation composition is not
@@ -1600,18 +1604,32 @@ form Anthropic never ran at all; the design's own artifact says as much
 elsewhere ("Anthropic's `ignore` condition is `L`... `I1-I5`, the
 negation-free imperative cell, was never run").
 
-**What's actually true, checked against the numbers:** within each frame, the
-negation-free form out-suppresses its morphologically-negated counterpart --
-`I` beats `J` as an imperative (dz vs T1: -0.838 vs -0.477), `K` beats `L` as
-a declarative (-1.460 vs -1.306) -- the same direction both times, which is
-the real Q5b finding (dz -0.46 averaged, Holm-significant on concept-vector).
-But cross-frame, `L` (Anthropic's actual cell) out-suppresses `I` (the
-never-tested cell) overall: -1.306 vs -0.838. So "the never-tested cell
-out-suppresses the one Anthropic measured" is backwards once the correct
-comparator is used -- frame matters more than negation type here (consistent
-with the 2x2 in the "fills a gap" section: declaratives generally suppress
-harder than imperatives on the away side), and negation's own cost is real
-but smaller, and only visible within a fixed frame.
+**First pass at "what's actually true" was itself wrong, and the same
+mistake repeated: inferring a comparison from two cells' separate dz-vs-T1
+values instead of testing them directly.** The original fix here claimed `K`
+beats `L` as a declarative because `K`'s dz-vs-T1 (-1.460) is more negative
+than `L`'s (-1.306). Asked directly ("don't K and L have the same score?"),
+that inference doesn't survive contact with the actual paired test: `K` vs
+`L` head-to-head is dz -0.016, p=.92 -- indistinguishable. Two cells' raw
+means can differ negligibly (`K` 0.072776, `L` 0.072787 -- a coincidence to
+four decimal places) while their dz-vs-a-third-cell (T1) differ more, because
+dz also depends on how *consistent* each cell's shift from T1 is across
+concepts, not just its average size -- a difference in precision, not in
+effect. `I` vs `J`, checked the same direct way, does hold up: dz -0.489,
+p=.004.
+
+**What actually survives:** negation's cost is frame-dependent, not uniform.
+The imperative pair (`I` vs `J`) shows a real, direct effect; the declarative
+pair (`K` vs `L`) shows none at all. The averaged Q5b contrast is still
+Holm-significant (dz -0.46) because it combines both pairs, but the effect
+lives entirely in the imperative side. Cross-frame, `L` (Anthropic's actual
+cell) vs `I` (the never-tested cell), checked directly this time: dz -0.566,
+p=.00094 -- `L` still out-suppresses `I`, confirming the reversal from the
+first correction survives, just for a narrower reason (frame, not a general
+"negation costs suppression in both frames" story). Lesson for anything
+still to write up here: a claim about two specific cells needs the direct
+paired test between them, not an inference from each one's separate contrast
+against a third cell.
 
 ## Open items
 

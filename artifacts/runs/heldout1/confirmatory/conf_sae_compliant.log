@@ -1,0 +1,107 @@
+Stage 2: layer=40 pooling=token_mean (from stage2_values.json, commit c37c7851)
+readout_sae_v2.parquet: 17,320 rows, 37 concepts, 25 cells  [COMPLIANT-ONLY robustness check]
+paired table: 37 concepts x 25 cells
+
+==========================================================================
+Q0 GATE  (A > T1 > T7)
+==========================================================================
+  rule: adjacent steps ordered by SIGN; A-vs-T7 span significant
+  A  - T1 : n=37  diff=86.04  dz=0.626  95%CI [52.42, 145.5]  p=0.0005259  informative=27 (detectable dz 0.7932)  [significant]
+  T1 - T7 : n=37  diff=6.907  dz=0.339  95%CI [2.618, 18.16]  p=0.04633  informative=11 (detectable dz 1.4566)  [significant]
+  A  - T7 : n=37  diff=92.95  dz=0.608  95%CI [56.34, 159.6]  p=0.000719  informative=27 (detectable dz 0.7932)  [significant]   <- the significance test
+  ordered signs      : YES
+  span significant   : YES
+  GATE HOLDS         : YES
+
+==========================================================================
+CONFIRMATORY FAMILY (15 tests, Holm, alpha=0.05)
+==========================================================================
+
+  Q1    [pair] p_holm=0.3397   T1 - L; prediction: L below T1 (positive difference)
+      n=37  diff=6.244  dz=0.309  95%CI [2.112, 18.95]  p=0.06793  informative=11 (detectable dz 1.4566)  [UNDERPOWERED (not a null)]
+        - L_vs_T7                  n=37  diff=0.6634  dz=0.296  95%CI [0.183, 1.885]  p=0.08012  informative=5 (detectable dz nan)  [UNDERPOWERED (not a null)]
+
+  Q2    [pair] p_holm=0.5771   prediction: no significant difference
+      n=37  diff=-3.587  dz=-0.244  95%CI [-12.03, -0.5527]  p=0.1469  informative=16 (detectable dz 1.1049)  [UNDERPOWERED (not a null)]
+
+  Q3    [pair] p_holm=0.2362   PRIMARY; direction not predicted
+      n=37  diff=-1.617  dz=-0.363  95%CI [-3.731, -0.5981]  p=0.03374  informative=16 (detectable dz 1.1049)  [significant]
+
+* Q3b   [pair] p_holm=0.003593
+      n=37  diff=-66.01  dz=-0.654  95%CI [-108.7, -40.09]  p=0.0003189  informative=27 (detectable dz 0.7932)  [significant]
+
+* Q3c   [mean] p_holm=0.01261
+      n=37  diff=49.18  dz=0.575  95%CI [28.92, 87.36]  p=0.001261  informative=27 (detectable dz 0.7932)  [significant]
+        - A_vs_I                   n=37  diff=91.24  dz=0.608  95%CI [53.83, 156.4]  p=0.0007211  informative=27 (detectable dz 0.7932)  [significant]
+        - B_vs_K                   n=37  diff=7.109  dz=0.291  95%CI [2.037, 21.2]  p=0.0848  informative=10 (detectable dz 1.5761)  [UNDERPOWERED (not a null)]
+        - interaction_(A-I)-(B-K)  n=37  diff=84.13  dz=0.645  95%CI [51.18, 139.1]  p=0.000378
+
+  Q4    [pair] p_holm=0.5771
+      n=37  diff=0.3753  dz=0.245  95%CI [0.04742, 1.341]  p=0.1443  informative=5 (detectable dz nan)  [UNDERPOWERED (not a null)]
+
+* Q5    [omnibus] p_holm=2.828e-05   frame x negation, away side
+      n=37  k=4  chi2=29.21  p=2.02e-06  informative=16 (detectable dz 1.1049)  [significant]
+        - interaction_(I-G)-(K-M)  n=37  diff=-1.992  dz=-0.387  95%CI [-4.49, -0.7995]  p=0.02417
+        - I_vs_K_imperative_vs_decl_none n=37  diff=0.7177  dz=0.450  95%CI [0.3379, 1.412]  p=0.00955  informative=10 (detectable dz 1.5761)  [significant]
+        - G_vs_M_imperative_vs_decl_syn n=37  diff=2.71  dz=0.445  95%CI [1.323, 5.655]  p=0.01028  informative=13 (detectable dz 1.2804)  [significant]
+
+  Q5b   [mean] p_holm=0.1233
+      n=37  diff=-1.52  dz=-0.418  95%CI [-3.167, -0.6614]  p=0.01541  informative=15 (detectable dz 1.1552)  [significant]
+        - I_vs_J                   n=37  diff=-3.362  dz=-0.394  95%CI [-7.388, -1.388]  p=0.02172  informative=14 (detectable dz 1.213)  [significant]
+        - K_vs_L                   n=37  diff=0.322  dz=0.138  95%CI [-0.1893, 1.483]  p=0.4084  informative=6 (detectable dz 2.6846)  [UNDERPOWERED (not a null)]
+        - interaction_(I-J)-(K-L)  n=37  diff=-3.684  dz=-0.362  95%CI [-8.286, -1.322]  p=0.03402
+
+  Q5c   [mean] p_holm=1
+      n=37  diff=1.14  dz=0.108  95%CI [-1.546, 5.271]  p=0.5153  informative=21 (detectable dz 0.9249)  [null]
+        - C_vs_D                   n=37  diff=6.555  dz=0.333  95%CI [1.834, 15.18]  p=0.0504  informative=21 (detectable dz 0.9249)  [null]
+        - E_vs_F                   n=37  diff=-4.274  dz=-0.260  95%CI [-14.01, -0.7102]  p=0.1232  informative=9 (detectable dz 1.7294)  [UNDERPOWERED (not a null)]
+        - interaction_(C-D)-(E-F)  n=37  diff=10.83  dz=0.367  95%CI [4.065, 24.72]  p=0.03209
+
+* Q5d   [omnibus] p_holm=1.691e-13   frame x negation, focus side
+      n=37  k=4  chi2=68.03  p=1.127e-14  informative=27 (detectable dz 0.7932)  [significant]
+        - interaction_(A-C)-(B-E)  n=37  diff=60.52  dz=0.677  95%CI [36.91, 96.39]  p=0.0002138
+        - A_vs_B_imperative_vs_decl_none n=37  diff=84.85  dz=0.645  95%CI [52.02, 139.3]  p=0.0003738  informative=27 (detectable dz 0.7932)  [significant]
+        - C_vs_E_imperative_vs_decl_syn n=37  diff=24.33  dz=0.429  95%CI [12.23, 55.45]  p=0.01313  informative=19 (detectable dz 0.9858)  [significant]
+
+  Q5e   [pair] p_holm=1
+      n=37  diff=0.05334  dz=0.044  95%CI [-0.2117, 0.6746]  p=0.7885  informative=5 (detectable dz nan)  [UNDERPOWERED (not a null)]
+
+* Q5f   [mean] p_holm=0.003593
+      n=37  diff=36.89  dz=0.658  95%CI [22.07, 58.85]  p=0.0002995  informative=27 (detectable dz 0.7932)  [significant]
+        - A_vs_D                   n=37  diff=72.56  dz=0.653  95%CI [43.11, 115.4]  p=0.0003291  informative=27 (detectable dz 0.7932)  [significant]
+        - B_vs_F                   n=37  diff=1.212  dz=0.235  95%CI [-0.2319, 3.089]  p=0.161  informative=14 (detectable dz 1.213)  [UNDERPOWERED (not a null)]
+        - interaction_(A-D)-(B-F)  n=37  diff=71.35  dz=0.646  95%CI [42.31, 114.7]  p=0.000371
+
+  Q6    [pair] p_holm=0.2362
+      n=37  diff=-1.939  dz=-0.354  95%CI [-4.245, -0.566]  p=0.03802  informative=15 (detectable dz 1.1552)  [significant]
+
+* Q7    [omnibus] p_holm=0.0004771   coherence gradient, T1 as floor
+      n=37  k=7  chi2=30.16  p=3.67e-05  informative=17 (detectable dz 1.0606)  [significant]
+        - Q_vs_T1                  n=37  diff=-6.034  dz=-0.296  95%CI [-18.1, -1.785]  p=0.08058  informative=11 (detectable dz 1.4566)  [UNDERPOWERED (not a null)]
+        - N_vs_T1                  n=37  diff=-2.522  dz=-0.138  95%CI [-10.76, 1.755]  p=0.4084  informative=15 (detectable dz 1.1552)  [UNDERPOWERED (not a null)]
+
+  Q8    [omnibus] p_holm=0.06204
+      n=37  k=5  chi2=14.13  p=0.006893  informative=13 (detectable dz 1.2804)  [significant]
+        - T1_vs_T2                 n=37  diff=6.336  dz=0.310  95%CI [2.027, 18.38]  p=0.06702  informative=11 (detectable dz 1.4566)  [UNDERPOWERED (not a null)]
+        - T1_vs_T3                 n=37  diff=3.419  dz=0.253  95%CI [0.7258, 11.59]  p=0.132  informative=12 (detectable dz 1.3602)  [UNDERPOWERED (not a null)]
+        - T3_vs_T4                 n=37  diff=1.827  dz=0.343  95%CI [0.4473, 3.957]  p=0.04408  informative=10 (detectable dz 1.5761)  [significant]
+        - T4_vs_T5                 n=37  diff=1.286  dz=0.231  95%CI [-0.06711, 3.612]  p=0.1681  informative=6 (detectable dz 2.6846)  [UNDERPOWERED (not a null)]
+
+==========================================================================
+OUTSIDE THE CORRECTION FAMILY
+==========================================================================
+  Q9 (sanity, must pass): n=37  diff=-0.2233  dz=-0.166  95%CI [-1.324, 0.003852]  p=0.3184
+      L1 - T6; prediction: L1 significantly BELOW T6
+      L1 significantly below T6: NO -- sanity check FAILED
+
+  Q10 (descriptive) between-concept sd by cell:
+      focus_imp_none         152.7
+      focus_imp_syn          64.74
+      focus_imp_both         53.72
+      focus_decl_none        26.75
+      focus_decl_both        25.65
+      base_bare_none         20.37
+      away_imp_morph         11.77
+      incong_imp_none        11.11
+
+wrote /tmp/conf_out/conf_sae_compliant.json

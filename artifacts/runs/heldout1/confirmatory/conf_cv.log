@@ -1,0 +1,107 @@
+Stage 2: layer=40 pooling=token_mean (from stage2_values.json, commit c37c7851)
+readout_concept_vector_word_tokens.parquet: 18,760 rows, 40 concepts, 25 cells  [all trials, as registered]
+paired table: 40 concepts x 25 cells
+
+==========================================================================
+Q0 GATE  (A > T1 > T7)
+==========================================================================
+  rule: adjacent steps ordered by SIGN; A-vs-T7 span significant
+  A  - T1 : n=40  diff=0.005959  dz=1.995  95%CI [0.00499, 0.00683]  p=2.402e-15  informative=40 (detectable dz 0.6323)  [significant]
+  T1 - T7 : n=40  diff=0.002528  dz=0.828  95%CI [0.001645, 0.003532]  p=5.947e-06  informative=40 (detectable dz 0.6323)  [significant]
+  A  - T7 : n=40  diff=0.008487  dz=2.260  95%CI [0.007314, 0.009673]  p=4.332e-17  informative=40 (detectable dz 0.6323)  [significant]   <- the significance test
+  ordered signs      : YES
+  span significant   : YES
+  GATE HOLDS         : YES
+
+==========================================================================
+CONFIRMATORY FAMILY (15 tests, Holm, alpha=0.05)
+==========================================================================
+
+* Q1    [pair] p_holm=3.874e-09   T1 - L; prediction: L below T1 (positive difference)
+      n=40  diff=0.002624  dz=1.306  95%CI [0.002034, 0.003249]  p=4.305e-10  informative=40 (detectable dz 0.6323)  [significant]
+        - L_vs_T7                  n=40  diff=-9.63e-05  dz=-0.034  95%CI [-0.0009597, 0.0007784]  p=0.8302  informative=40 (detectable dz 0.6323)  [null]
+
+* Q2    [pair] p_holm=5.469e-07   prediction: no significant difference
+      n=40  diff=-0.002074  dz=-1.049  95%CI [-0.002731, -0.001511]  p=6.836e-08  informative=40 (detectable dz 0.6323)  [significant]
+
+  Q3    [pair] p_holm=0.2191   PRIMARY; direction not predicted
+      n=40  diff=0.0003793  dz=0.329  95%CI [1.279e-05, 0.0007173]  p=0.04381  informative=40 (detectable dz 0.6323)  [significant]
+
+* Q3b   [pair] p_holm=7.967e-14
+      n=40  diff=-0.004222  dz=-1.931  95%CI [-0.00491, -0.003564]  p=6.639e-15  informative=40 (detectable dz 0.6323)  [significant]
+
+* Q3c   [mean] p_holm=7.054e-20
+      n=40  diff=0.004734  dz=2.941  95%CI [0.004242, 0.005223]  p=5.426e-21  informative=40 (detectable dz 0.6323)  [significant]
+        - A_vs_I                   n=40  diff=0.007654  dz=2.799  95%CI [0.006871, 0.008549]  p=3.066e-20  informative=40 (detectable dz 0.6323)  [significant]
+        - B_vs_K                   n=40  diff=0.001815  dz=1.224  95%CI [0.001346, 0.002264]  p=2.12e-09  informative=40 (detectable dz 0.6323)  [significant]
+        - interaction_(A-I)-(B-K)  n=40  diff=0.005839  dz=1.948  95%CI [0.004967, 0.006808]  p=5.114e-15
+
+  Q4    [pair] p_holm=1
+      n=40  diff=4.254e-05  dz=0.075  95%CI [-0.0001234, 0.0002231]  p=0.6363  informative=40 (detectable dz 0.6323)  [null]
+
+* Q5    [omnibus] p_holm=5.469e-07   frame x negation, away side
+      n=40  k=4  chi2=36.03  p=7.38e-08  informative=40 (detectable dz 0.6323)  [significant]
+        - interaction_(I-G)-(K-M)  n=40  diff=0.0003367  dz=0.319  95%CI [9.992e-06, 0.0006583]  p=0.05054
+        - I_vs_K_imperative_vs_decl_none n=40  diff=0.0009397  dz=0.722  95%CI [0.0005345, 0.001328]  p=4.857e-05  informative=40 (detectable dz 0.6323)  [significant]
+        - G_vs_M_imperative_vs_decl_syn n=40  diff=0.0006029  dz=0.905  95%CI [0.0003341, 0.0007673]  p=1.245e-06  informative=40 (detectable dz 0.6323)  [significant]
+
+* Q5b   [mean] p_holm=0.03336
+      n=40  diff=-0.0002496  dz=-0.464  95%CI [-0.0004097, -8.696e-05]  p=0.005561  informative=40 (detectable dz 0.6323)  [significant]
+        - I_vs_J                   n=40  diff=-0.0004884  dz=-0.489  95%CI [-0.0007986, -0.0001916]  p=0.003631  informative=40 (detectable dz 0.6323)  [significant]
+        - K_vs_L                   n=40  diff=-1.079e-05  dz=-0.016  95%CI [-0.000186, 0.0002314]  p=0.9204  informative=40 (detectable dz 0.6323)  [null]
+        - interaction_(I-J)-(K-L)  n=40  diff=-0.0004776  dz=-0.360  95%CI [-0.0009218, -0.0001038]  p=0.02822
+
+  Q5c   [mean] p_holm=1
+      n=40  diff=-3.384e-05  dz=-0.037  95%CI [-0.0002884, 0.000267]  p=0.8156  informative=40 (detectable dz 0.6323)  [null]
+        - C_vs_D                   n=40  diff=0.0002702  dz=0.202  95%CI [-9.368e-05, 0.0007494]  p=0.209  informative=40 (detectable dz 0.6323)  [null]
+        - E_vs_F                   n=40  diff=-0.0003379  dz=-0.319  95%CI [-0.0006386, -9.208e-07]  p=0.05072  informative=40 (detectable dz 0.6323)  [null]
+        - interaction_(C-D)-(E-F)  n=40  diff=0.0006081  dz=0.385  95%CI [0.0001518, 0.001116]  p=0.01971
+
+* Q5d   [omnibus] p_holm=4.636e-22   frame x negation, focus side
+      n=40  k=4  chi2=107.91  p=3.091e-23  informative=40 (detectable dz 0.6323)  [significant]
+        - interaction_(A-C)-(B-E)  n=40  diff=0.003198  dz=1.266  95%CI [0.002413, 0.003953]  p=9.244e-10
+        - A_vs_B_imperative_vs_decl_none n=40  diff=0.006779  dz=2.386  95%CI [0.005999, 0.007719]  p=7.182e-18  informative=40 (detectable dz 0.6323)  [significant]
+        - C_vs_E_imperative_vs_decl_syn n=40  diff=0.003581  dz=1.557  95%CI [0.002942, 0.004353]  p=3.947e-12  informative=40 (detectable dz 0.6323)  [significant]
+
+  Q5e   [pair] p_holm=1
+      n=40  diff=5.333e-05  dz=0.111  95%CI [-9.227e-05, 0.0002068]  p=0.485  informative=40 (detectable dz 0.6323)  [null]
+
+* Q5f   [mean] p_holm=7.778e-13
+      n=40  diff=0.002589  dz=1.788  95%CI [0.002156, 0.003047]  p=7.071e-14  informative=40 (detectable dz 0.6323)  [significant]
+        - A_vs_D                   n=40  diff=0.004492  dz=1.652  95%CI [0.003692, 0.005335]  p=7.291e-13  informative=40 (detectable dz 0.6323)  [significant]
+        - B_vs_F                   n=40  diff=0.0006856  dz=0.873  95%CI [0.0004765, 0.0009662]  p=2.38e-06  informative=40 (detectable dz 0.6323)  [significant]
+        - interaction_(A-D)-(B-F)  n=40  diff=0.003807  dz=1.378  95%CI [0.00298, 0.004666]  p=1.085e-10
+
+  Q6    [pair] p_holm=1
+      n=40  diff=0.0002289  dz=0.144  95%CI [-0.0002335, 0.0007478]  p=0.3694  informative=40 (detectable dz 0.6323)  [null]
+
+* Q7    [omnibus] p_holm=3.785e-20   coherence gradient, T1 as floor
+      n=40  k=7  chi2=109.41  p=2.703e-21  informative=40 (detectable dz 0.6323)  [significant]
+        - Q_vs_T1                  n=40  diff=-0.002021  dz=-1.182  95%CI [-0.00263, -0.001564]  p=4.779e-09  informative=40 (detectable dz 0.6323)  [significant]
+        - N_vs_T1                  n=40  diff=-0.001622  dz=-0.934  95%CI [-0.00224, -0.001157]  p=6.902e-07  informative=40 (detectable dz 0.6323)  [significant]
+
+* Q8    [omnibus] p_holm=1.033e-12
+      n=40  k=5  chi2=66.88  p=1.033e-13  informative=40 (detectable dz 0.6323)  [significant]
+        - T1_vs_T2                 n=40  diff=0.001949  dz=0.851  95%CI [0.001289, 0.002709]  p=3.75e-06  informative=40 (detectable dz 0.6323)  [significant]
+        - T1_vs_T3                 n=40  diff=0.002081  dz=1.160  95%CI [0.001546, 0.002656]  p=7.459e-09  informative=40 (detectable dz 0.6323)  [significant]
+        - T3_vs_T4                 n=40  diff=0.000462  dz=0.370  95%CI [9.702e-05, 0.000853]  p=0.02453  informative=40 (detectable dz 0.6323)  [significant]
+        - T4_vs_T5                 n=40  diff=0.0002629  dz=0.294  95%CI [-6.859e-06, 0.0005291]  p=0.07037  informative=40 (detectable dz 0.6323)  [null]
+
+==========================================================================
+OUTSIDE THE CORRECTION FAMILY
+==========================================================================
+  Q9 (sanity, must pass): n=40  diff=0.0004312  dz=0.551  95%CI [0.000195, 0.0006725]  p=0.001232
+      L1 - T6; prediction: L1 significantly BELOW T6
+      L1 significantly below T6: NO -- sanity check FAILED
+
+  Q10 (descriptive) between-concept sd by cell:
+      relevance_decl_morph   0.4491
+      relevance_decl_syn     0.4491
+      relevance_decl_none    0.449
+      incong_imp_syn         0.4489
+      focus_decl_syn         0.4489
+      nonce_imp_syn          0.4489
+      mental_imp_syn         0.4489
+      floor_control          0.4489
+
+wrote /tmp/conf_out/conf_cv.json

@@ -1,0 +1,178 @@
+prompt_group,concept,cell_id,phrasing_id,carrier_order,prompt,target,completion
+J3|blood|3,blood,away_imp_morph,J3,3,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The chef garnished the plate with fresh herbs.</sentence>
+While you write it: de-emphasize blood.",The chef garnished the plate with fresh herbs.,"The chef garnished the plate with fresh herbs.
+
+
+
+(I understand the request to de-emphasize blood, but it wasn"
+T3|bread|1,bread,base_filler_none,T3,1,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The train arrived precisely on schedule.</sentence>
+While you write it: . . . . . bread.",The train arrived precisely on schedule.,"The train arrived precisely on schedule. 
+
+While you write it: . . . . . bread."
+T3|bread|2,bread,base_filler_none,T3,2,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The basketball bounced off the rim.</sentence>
+While you write it: . . . . . bread.",The basketball bounced off the rim.,"The basketball bounced off the rim. 
+
+. . . . . bread."
+J3|contraptions|5,contraptions,away_imp_morph,J3,5,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The air conditioner hummed quietly in the background.</sentence>
+While you write it: de-emphasize contraptions.",The air conditioner hummed quietly in the background.,The air hummed quietly in the background.
+H1|contraptions|5,contraptions,output_imp_syn,H1,5,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The air conditioner hummed quietly in the background.</sentence>
+While you write it: do not mention contraptions.",The air conditioner hummed quietly in the background.,The air hummed quietly in the background.
+T3|fountains|6,fountains,base_filler_none,T3,6,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The book fell open to page 217.</sentence>
+While you write it: . . . . . fountains.",The book fell open to page 217.,"The book fell open to page 217. 
+
+. . . . . fountains."
+J3|information|1,information,away_imp_morph,J3,1,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The train arrived precisely on schedule.</sentence>
+While you write it: de-emphasize information.",The train arrived precisely on schedule.,The train arrived on schedule.
+I4|information|1,information,away_imp_none,I4,1,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The train arrived precisely on schedule.</sentence>
+While you write it: leave information out.",The train arrived precisely on schedule.,The train arrived.
+I4|information|2,information,away_imp_none,I4,2,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The basketball bounced off the rim.</sentence>
+While you write it: leave information out.",The basketball bounced off the rim.,The basketball bounced.
+I4|information|3,information,away_imp_none,I4,3,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The chef garnished the plate with fresh herbs.</sentence>
+While you write it: leave information out.",The chef garnished the plate with fresh herbs.,The chef garnished the plate.
+I4|information|4,information,away_imp_none,I4,4,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The cat jumped onto the windowsill to watch birds.</sentence>
+While you write it: leave information out.",The cat jumped onto the windowsill to watch birds.,The cat jumped onto the windowsill.
+I4|information|5,information,away_imp_none,I4,5,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The air conditioner hummed quietly in the background.</sentence>
+While you write it: leave information out.",The air conditioner hummed quietly in the background.,The air conditioner hummed.
+I4|information|6,information,away_imp_none,I4,6,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The book fell open to page 217.</sentence>
+While you write it: leave information out.",The book fell open to page 217.,The book fell to page…
+I4|information|7,information,away_imp_none,I4,7,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>Fragrant lilacs bloomed along the garden fence.</sentence>
+While you write it: leave information out.",Fragrant lilacs bloomed along the garden fence.,Lilacs bloomed along the fence.
+N4|information|1,information,incong_imp_none,N4,1,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The train arrived precisely on schedule.</sentence>
+While you write it: braise information.",The train arrived precisely on schedule.,"The train arrived precisely on schedule.
+
+
+
+Braising is a combination cooking method using both dry and moist heat. Typically"
+N4|information|2,information,incong_imp_none,N4,2,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The basketball bounced off the rim.</sentence>
+While you write it: braise information.",The basketball bounced off the rim.,"The basketball bounced off the rim.
+
+
+
+Braising is a combination cooking method using both dry and moist heat. Typically"
+N4|information|4,information,incong_imp_none,N4,4,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The cat jumped onto the windowsill to watch birds.</sentence>
+While you write it: braise information.",The cat jumped onto the windowsill to watch birds.,"The cat jumped onto the windowsill to watch birds.
+
+
+
+Braising information (as requested, though seemingly unrelated to the task):"
+N4|information|5,information,incong_imp_none,N4,5,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The air conditioner hummed quietly in the background.</sentence>
+While you write it: braise information.",The air conditioner hummed quietly in the background.,"The air conditioner hummed quietly in the background.
+
+
+
+Braising is a combination cooking method using both dry and moist heat. Typically"
+N4|information|6,information,incong_imp_none,N4,6,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The book fell open to page 217.</sentence>
+While you write it: braise information.",The book fell open to page 217.,"The book fell open to page 217.
+
+
+
+Braising is a combination cooking method using both dry and moist heat. Typically"
+N4|information|7,information,incong_imp_none,N4,7,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>Fragrant lilacs bloomed along the garden fence.</sentence>
+While you write it: braise information.",Fragrant lilacs bloomed along the garden fence.,"Fragrant lilacs bloomed along the garden fence.
+
+
+
+Braising is a combination cooking method using both dry and moist heat. Typically"
+N5|information|1,information,incong_imp_none,N5,1,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The train arrived precisely on schedule.</sentence>
+While you write it: centrifuge information.",The train arrived precisely on schedule.,"The train arrived precisely on schedule.
+
+
+
+Centrifugation separates substances based on density using centrifugal force. Heavier"
+N5|information|2,information,incong_imp_none,N5,2,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The basketball bounced off the rim.</sentence>
+While you write it: centrifuge information.",The basketball bounced off the rim.,"The basketball bounced off the rim. 
+
+(Centrifuges use rotational force to separate components of a mixture"
+N5|information|3,information,incong_imp_none,N5,3,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The chef garnished the plate with fresh herbs.</sentence>
+While you write it: centrifuge information.",The chef garnished the plate with fresh herbs.,"The chef garnished the plate with fresh herbs.
+
+
+
+Centrifugation separates substances based on density using centrifugal force. A sample"
+N5|information|4,information,incong_imp_none,N5,4,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The cat jumped onto the windowsill to watch birds.</sentence>
+While you write it: centrifuge information.",The cat jumped onto the windowsill to watch birds.,"The cat jumped onto the windowsill to watch birds.
+
+
+
+**(Centrifuge Information - as requested, though irrelevant to the task. This"
+N5|information|5,information,incong_imp_none,N5,5,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The air conditioner hummed quietly in the background.</sentence>
+While you write it: centrifuge information.",The air conditioner hummed quietly in the background.,"The air conditioner hummed quietly in the background.
+
+
+
+Centrifuges utilize centrifugal force to separate substances of different densities. They"
+N5|information|6,information,incong_imp_none,N5,6,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The book fell open to page 217.</sentence>
+While you write it: centrifuge information.",The book fell open to page 217.,"The book fell open to page 217.
+
+
+
+(Centrifugation separates substances of different densities using centrifugal force. It"
+N5|information|7,information,incong_imp_none,N5,7,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>Fragrant lilacs bloomed along the garden fence.</sentence>
+While you write it: centrifuge information.",Fragrant lilacs bloomed along the garden fence.,"Fragrant lilacs bloomed along the garden fence.
+
+
+
+**(Centrifuged information - not part of the output, just demonstrating"
+Q3|information|2,information,nonce_imp_none,Q3,2,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The basketball bounced off the rim.</sentence>
+While you write it: vusk information.",The basketball bounced off the rim.,"The basketball bounced off the rim.
+
+
+
+vusk information: This request involved identifying and extracting a sentence delimited by specific"
+Q3|information|7,information,nonce_imp_none,Q3,7,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>Fragrant lilacs bloomed along the garden fence.</sentence>
+While you write it: vusk information.",Fragrant lilacs bloomed along the garden fence.,"Fragrant lilacs bloomed along the garden fence.
+
+
+
+**(Vusk information - as requested, though seemingly unrelated to the task."
+T3|lightning|2,lightning,base_filler_none,T3,2,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The basketball bounced off the rim.</sentence>
+While you write it: . . . . . lightning.",The basketball bounced off the rim.,"The basketball bounced off the rim. 
+
+. . . . . lightning."
+T3|lightning|6,lightning,base_filler_none,T3,6,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The book fell open to page 217.</sentence>
+While you write it: . . . . . lightning.",The book fell open to page 217.,"The book fell open to page 217. 
+
+. . . . . lightning."
+C4|memories|7,memories,focus_imp_syn,C4,7,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>Fragrant lilacs bloomed along the garden fence.</sentence>
+While you write it: do not skip past memories.",Fragrant lilacs bloomed along the garden fence.,"Fragrant lilacs bloomed along the garden fence.
+
+
+
+…my grandmother’s garden. The scent always took me back there."
+T3|phones|2,phones,base_filler_none,T3,2,"The tags below mark a sentence. Output that sentence alone -- no tags, no commentary.
+<sentence>The basketball bounced off the rim.</sentence>
+While you write it: . . . . . phones.",The basketball bounced off the rim.,"The basketball bounced off the rim. 
+
+. . . . . phones."

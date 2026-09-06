@@ -1296,12 +1296,16 @@ add a new confirmatory claim.
   reduction. SAE can't corroborate (underpowered: informative=16/37). See the
   dedicated section below — this is largely explained away by dilution on
   closer inspection.
-- **Q5b** (negation: I/J, K/L) — the negation-free away cell (`I`: "set X
-  aside" / "ignore X" — explicitly "the imperative form Anthropic named but
-  never ran") suppresses *more* than its morphologically-negated counterpart
-  (`J`: "disregard X" / "de-emphasize X") on concept-vector (dz -0.46,
-  Holm-significant). The never-tested cell turns out to out-suppress the one
-  Anthropic actually measured.
+- **Q5b** (negation: I/J, K/L) — corrected 2026-09-05 (see below): within each
+  frame, the negation-free away cell out-suppresses its morphologically-negated
+  counterpart -- `I` ("set X aside"/"ignore X") beats `J` ("disregard X") as an
+  imperative, `K` ("X is beside the point") beats `L` ("X is irrelevant to this
+  task") as a declarative (dz -0.46 averaged, Holm-significant on
+  concept-vector). `L`, not `J`, is Anthropic's actual "ignore" condition (their
+  only away-instruction, a declarative); `I` and `J` are both imperative forms
+  they never tested. Cross-frame, `L` still out-suppresses `I` overall
+  (dz -1.31 vs -0.84) -- frame matters more than negation type here, so this
+  is not a case of the untested cell beating the measured one.
 - **Q5f** (double negation vs none) — "do not disregard X" (logically
   equivalent to "concentrate on X") reads well below the plain positive
   phrasing on both readouts (dz 0.66 SAE, 1.79 CV). Negation composition is not
@@ -1581,6 +1585,33 @@ framing is, and nonsense doesn't borrow any of that by resembling an
 imperative. Folded into the results page's coherence-gradient write-up
 (moved into "genuinely surprising" accordingly) rather than left as "fills a
 design gap," which undersold it.
+
+## 2026-09-05 -- Q5b correction: `L`, not `J`, is Anthropic's condition -- and the comparison was backwards
+
+The Q5b write-up (both here and on the results page) misidentified which cell
+Anthropic actually measured, then drew a conclusion the corrected comparison
+doesn't support. Caught by a question on the results page, not found
+independently first.
+
+**The error.** "Disregard X" (`J`, an imperative) was described as "the one
+Anthropic measured." It isn't -- Anthropic's `ignore` condition is `L`, "X is
+irrelevant to this task," a **declarative**. `J` is, like `I`, an imperative
+form Anthropic never ran at all; the design's own artifact says as much
+elsewhere ("Anthropic's `ignore` condition is `L`... `I1-I5`, the
+negation-free imperative cell, was never run").
+
+**What's actually true, checked against the numbers:** within each frame, the
+negation-free form out-suppresses its morphologically-negated counterpart --
+`I` beats `J` as an imperative (dz vs T1: -0.838 vs -0.477), `K` beats `L` as
+a declarative (-1.460 vs -1.306) -- the same direction both times, which is
+the real Q5b finding (dz -0.46 averaged, Holm-significant on concept-vector).
+But cross-frame, `L` (Anthropic's actual cell) out-suppresses `I` (the
+never-tested cell) overall: -1.306 vs -0.838. So "the never-tested cell
+out-suppresses the one Anthropic measured" is backwards once the correct
+comparator is used -- frame matters more than negation type here (consistent
+with the 2x2 in the "fills a gap" section: declaratives generally suppress
+harder than imperatives on the away side), and negation's own cost is real
+but smaller, and only visible within a fixed frame.
 
 ## Open items
 

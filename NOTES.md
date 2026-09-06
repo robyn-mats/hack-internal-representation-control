@@ -1631,6 +1631,25 @@ still to write up here: a claim about two specific cells needs the direct
 paired test between them, not an inference from each one's separate contrast
 against a third cell.
 
+## 2026-09-05 -- A third place this replication diverges from Anthropic: focus is not "only modestly" above mention
+
+Raised directly, not found independently first: Anthropic's A.10 describes
+their `mention` condition as already doing most of the work, and `focus`
+("concentrate on X while you write") as "highest -- but only modestly above
+mention." Checked against the registered Q0 gate numbers (already computed,
+just not read this way before): A vs T1 is dz 1.995 on concept-vector
+(p=2.4e-15, n=40, fully powered) and dz 0.626 on SAE (p=.0005, informative
+n=27 of 37). Neither is "modest" by any conventional reading of the term --
+dz near 2 is enormous, and even the noisier SAE readout clears the
+large-effect threshold. So this is a third place (after Q2's `G` suppressing
+instead of failing to, and Q7's nonsense instructions suppressing instead of
+riding along with focus) where this replication's numbers don't match
+Anthropic's characterization of the base landscape, not just the two harder
+dissociation questions this fork was built to decompose. Added to the results
+page as its own highlight, next to the existing Q0 gate chart (which already
+showed this gap visually -- the bare numbers were sitting there, just not
+called out against Anthropic's specific wording until now).
+
 ## Open items
 
 - `carrier_similarity.csv` and `stimuli.csv` are not yet generated.
